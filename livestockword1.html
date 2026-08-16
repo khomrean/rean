@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐄 ចិញ្ចឹមសត្វ - ASAT</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:12px;max-width:480px;margin:auto;min-height:100vh}
+        
+        .header{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,#38a169,#2f855a);color:#fff;padding:6px 8px;border-radius:14px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+        .header-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;align-items:center}
+        .header button{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:20px;padding:6px 2px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;text-align:center;width:100%;height:32px;display:flex;align-items:center;justify-content:center;gap:2px}
+        .header button:hover{background:rgba(255,255,255,0.25);transform:scale(1.03)}
+        .header button:active{transform:scale(0.92)}
+        .header button.active{background:#fff;color:#1a365d;border-color:#fff}
+        .header button.inactive{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.1)}
+        .header button.gtts-on{background:#2b6cb0;color:#fff;border-color:#38a169}
+        .header button.gtts-off{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.15)}
+        .header .nav-btn{font-size:14px;font-weight:700}
+        .header .nav-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none!important}
+
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2d3748;color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s}
+        .toast.show{opacity:1}
+
+        .card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:12px;min-height:400px}
+
+        .vocab-header{margin-bottom:12px}
+        .vocab-header h2{font-size:18px;color:#1a365d;margin-bottom:4px}
+        .vocab-actions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:8px 0;border-top:1px solid #f0f4f8;border-bottom:1px solid #f0f4f8}
+        .vocab-actions button{padding:6px 14px;border-radius:20px;border:1.5px solid #2b6cb0;font-size:12px;font-weight:600;cursor:pointer;transition:0.2s;background:rgba(43,108,176,0.05);color:#2b6cb0;white-space:nowrap}
+        .vocab-actions button:hover{background:#2b6cb0;color:#fff}
+        .vocab-actions button.stop-btn{border-color:#e53e3e;color:#e53e3e}
+        .vocab-actions button.stop-btn:hover{background:#e53e3e;color:#fff}
+        .vocab-actions button.loop-on{background:#38a169;color:#fff;border-color:#38a169}
+        .vocab-actions button.loop-on:hover{background:#2f855a}
+
+        .vocab-list{max-height:420px;overflow-y:auto}
+        .vocab-item{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #f0f4f8;gap:6px;flex-wrap:wrap}
+        .vocab-item:hover{background:#f7fafc;border-radius:8px}
+        .vocab-ja{flex:2;font-size:15px;font-weight:600;color:#1a202c;min-width:80px}
+        .vocab-ja ruby{font-weight:600}
+        .vocab-ja rt{font-size:10px;color:#2b6cb0}
+        .vocab-ja .num{color:#718096;font-weight:400;margin-right:4px}
+        .vocab-km{flex:2;font-size:13px;color:#4a5568;min-width:60px}
+        .vocab-km.hidden{display:none}
+        .vocab-speak{background:rgba(43,108,176,0.1);border:1.5px solid #2b6cb0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:12px;transition:0.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#2b6cb0}
+        .vocab-speak:hover{background:#2b6cb0;color:#fff}
+        .vocab-speak:active{transform:scale(0.9)}
+        .vocab-speak.listening{background:#48bb78;color:#fff;border-color:#48bb78;animation:pulse 1s infinite}
+        @keyframes pulse{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}
+
+        .nav-row{display:flex;gap:10px;margin-top:16px;align-items:center;justify-content:center}
+        .nav-row button{padding:10px 20px;border:0;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:0.2s}
+        .btn-prev{background:#e2e8f0;color:#4a5568}
+        .btn-prev:hover{background:#cbd5e0}
+        .btn-prev:disabled{opacity:0.3;cursor:not-allowed}
+        .btn-next{background:#2b6cb0;color:#fff}
+        .btn-next:hover{background:#1a365d}
+        .btn-next:disabled{opacity:0.3;cursor:not-allowed}
+        .page-indicator{font-size:14px;font-weight:600;color:#4a5568;min-width:60px;text-align:center}
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-grid">
+            <button class="nav-btn" id="prevBtn" onclick="prevVocabPage()" disabled>◀</button>
+            <button id="toggleKh" class="active" onclick="toggleKh()">ខ្មែរ</button>
+            <button id="toggleFuri" class="active" onclick="toggleFuri()">ふり</button>
+            <button id="toggleGtts" class="gtts-off" onclick="toggleGtts()">GTTS</button>
+            <button class="nav-btn" id="nextBtn" onclick="nextVocabPage()">▶</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">✅</div>
+
+    <div class="card" id="quizCard">
+        <div id="contentArea"></div>
+    </div>
+    <div id="feedbackArea"></div>
+
+    <script>
+        // ============================================================
+        // 🐄 LIVESTOCK VOCABULARY - SET 1 (CORRECTED)
+        // ============================================================
+
+        var vocabData = [
+            { ja: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>', speech: 'にゅうぎゅう', km: 'គោទឹកដោះ' },
+            { ja: '<ruby>肉用牛<rt>にくようぎゅう</rt></ruby>', speech: 'にくようぎゅう', km: 'គោសាច់' },
+            { ja: '<ruby>黒毛和種<rt>くろげわしゅ</rt></ruby>', speech: 'くろげわしゅ', km: 'ពូជគោខ្មៅជប៉ុន' },
+            { ja: '<ruby>ホルスタイン種<rt>ほるすたいんしゅ</rt></ruby>', speech: 'ほるすたいんしゅ', km: 'ពូជហូលស្តាញ' },
+            { ja: '<ruby>交雑種<rt>こうざつしゅ</rt></ruby>', speech: 'こうざつしゅ', km: 'ពូជកាត់/ពូជចម្រុះ' },
+            { ja: '<ruby>肥育<rt>ひいく</rt></ruby>', speech: 'ひいく', km: 'ការចិញ្ចឹមបំប៉នយកសាច់' },
+            { ja: '<ruby>繁殖<rt>はんしょく</rt></ruby>', speech: 'はんしょく', km: 'ការបន្តពូជ' },
+            { ja: '<ruby>分娩<rt>ぶんべん</rt></ruby>', speech: 'ぶんべん', km: 'ការសម្រាលកូន' },
+            { ja: '<ruby>搾乳<rt>さくにゅう</rt></ruby>', speech: 'さくにゅう', km: 'ការច្របាច់ទឹកដោះ' },
+            { ja: '<ruby>初乳<rt>しょにゅう</rt></ruby>', speech: 'しょにゅう', km: 'ទឹកដោះដំបូង (Colostrum)' },
+            { ja: '<ruby>子牛<rt>こうし</rt></ruby>', speech: 'こうし', km: 'កូនគោ' },
+            { ja: '<ruby>豚<rt>ぶた</rt></ruby>', speech: 'ぶた', km: 'ជ្រូក' },
+            { ja: '<ruby>母豚<rt>ぼとん</rt></ruby>', speech: 'ぼとん', km: 'មេជ្រូក' },
+            { ja: '<ruby>子豚<rt>こぶた</rt></ruby>', speech: 'こぶた', km: 'កូនជ្រូក' },
+            { ja: '<ruby>人工授精<rt>じんこうじゅせい</rt></ruby>', speech: 'じんこうじゅせい', km: 'ការបង្កាត់សិប្បនិម្មិត' },
+            { ja: '<ruby>飼料<rt>しりょう</rt></ruby>', speech: 'しりょう', km: 'ចំណីសត្វ' },
+            { ja: '<ruby>粗飼料<rt>そしりょう</rt></ruby>', speech: 'そしりょう', km: 'ចំណីរដុប (ស្មៅ/ចំបើង)' },
+            { ja: '<ruby>濃厚飼料<rt>のうこうしりょう</rt></ruby>', speech: 'のうこうしりょう', km: 'ចំណីប្រមូលផ្តុំ (ធញ្ញជាតិ)' },
+            { ja: '<ruby>配合飼料<rt>はいごうしりょう</rt></ruby>', speech: 'はいごうしりょう', km: 'ចំណីផ្សំស្រេច' },
+            { ja: '<ruby>サイレージ<rt>さいれーじ</rt></ruby>', speech: 'さいれーじ', km: 'ចំណីផ្អាប់ (Silage)' },
+            { ja: '<ruby>ジャージー種<rt>じゃーじーしゅ</rt></ruby>', speech: 'じゃーじーしゅ', km: 'ពូជជឺស៊ី (Jersey)' },
+            { ja: '<ruby>ブラウンスイス種<rt>ぶらうんすいすしゅ</rt></ruby>', speech: 'ぶらうんすいすしゅ', km: 'ពូជប្រោនស្វីស' },
+            { ja: '<ruby>褐毛和種<rt>かっもうわしゅ</rt></ruby>', speech: 'かっもうわしゅ', km: 'ពូជគោត្នោតជប៉ុន' },
+            { ja: '<ruby>日本短角種<rt>にほんたんかくしゅ</rt></ruby>', speech: 'にほんたんかくしゅ', km: 'ពូជគោស្នែងខ្លីជប៉ុន' },
+            { ja: '<ruby>無角和種<rt>むかくわしゅ</rt></ruby>', speech: 'むかくわしゅ', km: 'ពូជគោគ្មានស្នែងជប៉ុន' },
+            { ja: '<ruby>去勢牛<rt>きょせいぎゅう</rt></ruby>', speech: 'きょせいぎゅう', km: 'គោដែលបានគ្រៀវ/ធ្វើមាប់' },
+            { ja: '<ruby>経産牛<rt>けいさんぎゅう</rt></ruby>', speech: 'けいさんぎゅう', km: 'គោធ្លាប់សម្រាលកូន' },
+            { ja: '<ruby>初産牛<rt>しょさんぎゅう</rt></ruby>', speech: 'しょさんぎゅう', km: 'គោទើបសម្រាលកូនដំបូង' },
+            { ja: '<ruby>育成牛<rt>いくせいぎゅう</rt></ruby>', speech: 'いくせいぎゅう', km: 'គោកំពុងលូតលាស់' },
+            { ja: '<ruby>肥育牛<rt>ひいくぎゅう</rt></ruby>', speech: 'ひいくぎゅう', km: 'គោចិញ្ចឹមយកសាច់' },
+            { ja: '<ruby>未経産牛<rt>みけいさんぎゅう</rt></ruby>', speech: 'みけいさんぎゅう', km: 'គោជំទង់មិនទាន់សម្រាល' },
+            { ja: '<ruby>種雄牛<rt>しゅゆうぎゅう</rt></ruby>', speech: 'しゅゆうぎゅう', km: 'គោបា/គោឈ្មោលពូជ' },
+            { ja: '<ruby>種雌牛<rt>しゅしぎゅう</rt></ruby>', speech: 'しゅしぎゅう', km: 'មេគោពូជ' },
+            { ja: '<ruby>交配<rt>こうはい</rt></ruby>', speech: 'こうはい', km: 'ការបង្កាត់ពូជ' },
+            { ja: '<ruby>受精卵<rt>じゅせいらん</rt></ruby>', speech: 'じゅせいらん', km: 'ស៊ុត/អំប្រ៊ីយ៉ុងបង្កកំណើត' },
+            { ja: '<ruby>受精卵移植<rt>じゅせいらんいしょく</rt></ruby>', speech: 'じゅせいらんいしょく', km: 'ការផ្សាំអំប្រ៊ីយ៉ុង' },
+            { ja: '<ruby>ゲノム育種価<rt>げのむいくしゅか</rt></ruby>', speech: 'げのむいくしゅか', km: 'តម្លៃបង្កាត់ពូជតាមហ្សែន' },
+            { ja: '<ruby>血統<rt>けっとう</rt></ruby>', speech: 'けっとう', km: 'ពូជពង្ស/ខ្សែស្រឡាយពូជ' },
+            { ja: '<ruby>遺伝子<rt>いでんし</rt></ruby>', speech: 'いでんし', km: 'ហ្សែន (Gene)' },
+            { ja: '<ruby>DNA<rt>でぃーえぬえー</rt></ruby>', speech: 'でぃーえぬえー', km: 'DNA' },
+            { ja: '<ruby>ホルモン<rt>ほるもん</rt></ruby>', speech: 'ほるもん', km: 'អ័រម៉ូន' },
+            { ja: '<ruby>発情<rt>はつじょう</rt></ruby>', speech: 'はつじょう', km: 'ការឡើងកម្តៅ (ចង់ឈ្មោល)' },
+            { ja: '<ruby>発情周期<rt>はつじょうしゅうき</rt></ruby>', speech: 'はつじょうしゅうき', km: 'វដ្តនៃការឡើងកម្តៅ' },
+            { ja: '<ruby>妊娠<rt>にんしん</rt></ruby>', speech: 'にんしん', km: 'ការមានគភ៌/ពពោះ' },
+            { ja: '<ruby>受胎<rt>じゅたい</rt></ruby>', speech: 'じゅたい', km: 'ការបង្កកំណើតជាប់' },
+            { ja: '<ruby>ルーメン<rt>るーめん</rt></ruby>', speech: 'るーめん', km: 'ក្រពះទី១ (Rumen)' },
+            { ja: '<ruby>第１胃<rt>だいいちい</rt></ruby>', speech: 'だいいちい', km: 'ក្រពះទី១ (ក្រពះកន្សោម)' },
+            { ja: '<ruby>第２胃<rt>だいにい</rt></ruby>', speech: 'だいにい', km: 'ក្រពះទី២ (ក្រពះសំបុកឃ្មុំ)' },
+            { ja: '<ruby>第３胃<rt>だいさんい</rt></ruby>', speech: 'だいさんい', km: 'ក្រពះទី៣ (ក្រពះផ្នត់ស្លឹក)' },
+            { ja: '<ruby>第４胃<rt>だいよんい</rt></ruby>', speech: 'だいよんい', km: 'ក្រពះទី៤ (ក្រពះពិត)' },
+            { ja: '<ruby>反芻<rt>はんすう</rt></ruby>', speech: 'はんすう', km: 'ការទំពារឡើងវិញ' },
+            { ja: '<ruby>咀嚼<rt>そしゃく</rt></ruby>', speech: 'そしゃく', km: 'ការទំពារ' },
+            { ja: '<ruby>蹄<rt>ひづめ</rt></ruby>', speech: 'ひづめ', km: 'ក្រចកជើងសត្វពាហនៈ' },
+            { ja: '<ruby>乳房<rt>にゅうぼう</rt></ruby>', speech: 'にゅうぼう', km: 'ដោះគោ' },
+            { ja: '<ruby>乳頭<rt>にゅうとう</rt></ruby>', speech: 'にゅうとう', km: 'ក្បាលដោះ' },
+            { ja: '<ruby>胎盤<rt>たいばん</rt></ruby>', speech: 'たいばん', km: 'សុកកូន' },
+            { ja: '<ruby>後産<rt>あとざん</rt></ruby>', speech: 'あとざん', km: 'ការធ្លាក់សុកក្រោយសម្រាល' },
+            { ja: '<ruby>子宮<rt>しきゅう</rt></ruby>', speech: 'しきゅう', km: 'ស្បូន' },
+            { ja: '<ruby>卵巣<rt>らんそう</rt></ruby>', speech: 'らんそう', km: 'ក្រពេញអូវែ' },
+            { ja: '<ruby>精液<rt>せいえき</rt></ruby>', speech: 'せいえき', km: 'ទឹកកាម' },
+            { ja: '<ruby>精子<rt>せいし</rt></ruby>', speech: 'せいし', km: 'មេជីវិតឈ្មោល' },
+            { ja: '<ruby>乳脂肪<rt>にゅうしぼう</rt></ruby>', speech: 'にゅうしぼう', km: 'ខ្លាញ់ទឹកដោះ' },
+            { ja: '<ruby>乳蛋白質<rt>にゅうたんぱくしつ</rt></ruby>', speech: 'にゅうたんぱくしつ', km: 'ប្រូតេអ៊ីនទឹកដោះ' },
+            { ja: '<ruby>体細胞数<rt>たいさいぼうすう</rt></ruby>', speech: 'たいさいぼうすう', km: 'ចំនួនកោសិកាសរីរាង្គក្នុងទឹកដោះ (SCC)' },
+            { ja: '<ruby>ボディコンディションスコア<rt>ぼでぃこんでぃしょんすこあ</rt></ruby>', speech: 'ぼでぃこんでぃしょんすこあ', km: 'ពិន្ទុវាយតម្លៃកម្រិតធាត់ស្គម (BCS)' },
+            { ja: '<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby>', speech: 'ぎゅうしゃ', km: 'ក្រោលគោ' },
+            { ja: '<ruby>放牧<rt>ほうぼく</rt></ruby>', speech: 'ほうぼく', km: 'ការលែងសត្វតាមវាលស្មៅ' },
+            { ja: '<ruby>舎飼い<rt>しゃがい</rt></ruby>', speech: 'しゃがい', km: 'ការចិញ្ចឹមជាប់ក្នុងក្រោល' },
+            { ja: '<ruby>つなぎ飼い<rt>つなぎがい</rt></ruby>', speech: 'つなぎがい', km: 'ការចងសត្វចិញ្ចឹមមួយកន្លែង' },
+            { ja: '<ruby>フリーバーン<rt>ふりーばーん</rt></ruby>', speech: 'ふりーばーん', km: 'ក្រោលលែងសេរីគ្មានកន្លែងដេកដាច់ដោយឡែក' },
+            { ja: '<ruby>フリーストール<rt>ふりーすとーる</rt></ruby>', speech: 'ふりーすとーる', km: 'ក្រោលលែងសេរីមានបន្ទប់ដេកដាច់ៗពីគ្នា' },
+            { ja: '<ruby>スタンチョン<rt>すたんちょん</rt></ruby>', speech: 'すたんちょん', km: 'រនាំងចាក់សោកសត្វពេលស៊ីចំណី' },
+            { ja: '<ruby>牛床<rt>ぎゅうしょう</rt></ruby>', speech: 'ぎゅうしょう', km: 'កម្រាលដេករបស់គោ' },
+            { ja: '<ruby>敷料<rt>しきりょう</rt></ruby>', speech: 'しきりょう', km: 'កម្រាលទ្រាប់បាតក្រោល' },
+            { ja: '<ruby>堆肥<rt>たいひ</rt></ruby>', speech: 'たいひ', km: 'ជីកំប៉ុស' },
+            { ja: '<ruby>糞尿<rt>ふんにょう</rt></ruby>', speech: 'ふんにょう', km: 'លាមក និងទឹកនោម' },
+            { ja: '<ruby>スラリー<rt>すらりー</rt></ruby>', speech: 'すらりー', km: 'លាមករាវលាយទឹកនោម' },
+            { ja: '<ruby>バルククーラー<rt>ばるくくーらー</rt></ruby>', speech: 'ばるくくーらー', km: 'ធុងត្រជាក់រក្សាទុកទឹកដោះ' },
+            { ja: '<ruby>ミルキングバーラー<rt>みるきんぐばーらー</rt></ruby>', speech: 'みるきんぐばーらー', km: 'រោងច្របាច់ទឹកដោះ' },
+            { ja: '<ruby>搾乳ロボット<rt>さくにゅうろぼっと</rt></ruby>', speech: 'さくにゅうろぼっと', km: 'រ៉ូបូតច្របាច់ទឹកដោះស្វ័យប្រវត្តិ' },
+            { ja: '<ruby>乾乳期<rt>かんにゅうき</rt></ruby>', speech: 'かんにゅうき', km: 'រដូវផ្អាកច្របាច់ទឹកដោះ' },
+            { ja: '<ruby>泌乳<rt>ひにゅう</rt></ruby>', speech: 'ひにゅう', km: 'ការបញ្ចេញទឹកដោះ' },
+            { ja: '<ruby>乳量<rt>にゅうりょう</rt></ruby>', speech: 'にゅうりょう', km: 'បរិមាណទឹកដោះ' },
+            { ja: '<ruby>乳質<rt>にゅうしつ</rt></ruby>', speech: 'にゅうしつ', km: 'គុណភាពទឹកដោះ' },
+            { ja: '<ruby>常乳<rt>じょうにゅう</rt></ruby>', speech: 'じょうにゅう', km: 'ទឹកដោះគោធម្មតា' },
+            { ja: '<ruby>乳房炎<rt>にゅうぼうえん</rt></ruby>', speech: 'にゅうぼうえん', km: 'ជំងឺរលាកដោះ' },
+            { ja: '<ruby>蹄病<rt>ていびょう</rt></ruby>', speech: 'ていびょう', km: 'ជំងឺក្រចកជើង' },
+            { ja: '<ruby>蹄葉炎<rt>ていようえん</rt></ruby>', speech: 'ていようえん', km: 'ជំងឺរលាកបាតក្រចកគោ' },
+            { ja: '<ruby>第四胃変位<rt>だいよんいへんい</rt></ruby>', speech: 'だいよんいへんい', km: 'ជំងឺផ្លាស់ទីក្រពះទី៤' },
+            { ja: '<ruby>ルーメンアシドーシス<rt>るーめんあしどーしす</rt></ruby>', speech: 'るーめんあしどーしす', km: 'ជំងឺជាតិអាស៊ីតលើសក្នុងក្រពះទី១' },
+            { ja: '<ruby>乳熱<rt>にゅうねつ</rt></ruby>', speech: 'にゅうねつ', km: 'ជំងឺខ្វះជាតិកាល់ស្យូមក្រោយសម្រាល (Milk fever)' },
+            { ja: '<ruby>削蹄<rt>さくてい</rt></ruby>', speech: 'さくてい', km: 'ការកាត់តម្រឹមក្រចកជើងគោ' },
+            { ja: '<ruby>除角<rt>じょかく</rt></ruby>', speech: 'じょかく', km: 'ការកាត់ស្នែង' },
+            { ja: '<ruby>去勢<rt>きょせい</rt></ruby>', speech: 'きょせい', km: 'ការគ្រៀវ/ការធ្វើមាប់' },
+            { ja: '<ruby>ランドレース<rt>らんどれーす</rt></ruby>', speech: 'らんどれーす', km: 'ពូជជ្រូកឡង់ដ្រេស (L)' },
+            { ja: '<ruby>大ヨークシャー<rt>だいよーくしゃー</rt></ruby>', speech: 'だいよーくしゃー', km: 'ពូជជ្រូកយ៉កស្យែរធំ (W)' },
+            { ja: '<ruby>デュロック<rt>でゅろっく</rt></ruby>', speech: 'でゅろっく', km: 'ពូជជ្រូកឌូរ៉ុក (D)' },
+            { ja: '<ruby>バークシャー<rt>ばーくしゃー</rt></ruby>', speech: 'ばーくしゃー', km: 'ពូជជ្រូកបាកស្យែរ (B)' },
+            { ja: '<ruby>ハンプシャー<rt>はんぷしゃー</rt></ruby>', speech: 'はんぷしゃー', km: 'ពូជជ្រូកហាំស្យែរ (H)' },
+            { ja: '<ruby>中ヨークシャー<rt>ちゅうよーくしゃー</rt></ruby>', speech: 'ちゅうよーくしゃー', km: 'ពូជជ្រូកយ៉កស្យែរមធ្យម (M)' },
+            { ja: '<ruby>三元交配<rt>さんげんこうはい</rt></ruby>', speech: 'さんげんこうはい', km: 'ការបង្កាត់ពូជជ្រូក ៣ ប្រភេទ (LWD)' },
+            { ja: '<ruby>雑種強勢<rt>ざっしゅきょうせい</rt></ruby>', speech: 'ざっしゅきょうせい', km: 'អនុភាពកូនកាត់ (លូតលាស់លឿន)' },
+            { ja: '<ruby>ハイブリッド豚<rt>はいぶりっどぶた</rt></ruby>', speech: 'はいぶりっどぶた', km: 'ជ្រូកពូជកាត់ពាណិជ្ជកម្ម' },
+            { ja: '<ruby>種豚<rt>しゅとん</rt></ruby>', speech: 'しゅとん', km: 'ជ្រូកបង្កាត់ពូជ' },
+            { ja: '<ruby>肥育豚<rt>ひいくとん</rt></ruby>', speech: 'ひいくとん', km: 'ជ្រូកចិញ្ចឹមយកសាច់' },
+            { ja: '<ruby>繁殖豚<rt>はんしょくとん</rt></ruby>', speech: 'はんしょくとん', km: 'ជ្រូកបន្តពូជ' },
+            { ja: '<ruby>離乳<rt>りにゅう</rt></ruby>', speech: 'りにゅう', km: 'ការផ្តាច់ដោះ' },
+            { ja: '<ruby>哺乳<rt>ほにゅう</rt></ruby>', speech: 'ほにゅう', km: 'ការបំបៅដោះកូន' },
+            { ja: '<ruby>哺育<rt>ほいく</rt></ruby>', speech: 'ほいく', km: 'ការចិញ្ចឹមបីបាច់កូនសត្វ' },
+            { ja: '<ruby>不断給餌<rt>ふだんきゅうじ</rt></ruby>', speech: 'ふだんきゅうじ', km: 'ការផ្ដល់ចំណីពេញៗឥតកំណត់' },
+            { ja: '<ruby>制限給餌<rt>せいげんきゅうじ</rt></ruby>', speech: 'せいげんきゅうじ', km: 'ការផ្ដល់ចំណីតាមកម្រិតកំណត់' },
+            { ja: '<ruby>SPF豚<rt>えすぴーえふとん</rt></ruby>', speech: 'えすぴーえふとん', km: 'ជ្រូកគ្មានមេរោគជាក់លាក់ (SPF Pig)' },
+            { ja: '<ruby>肉豚<rt>にくぶた</rt></ruby>', speech: 'にくぶた', km: 'ជ្រូកសាច់' },
+            { ja: '<ruby>枝肉<rt>えだにく</rt></ruby>', speech: 'えだにく', km: 'សាច់ទាំងមូល (គ្មានក្បាល/ជើង/គ្រឿងក្នុង)' },
+            { ja: '<ruby>鼻<rt>はな</rt></ruby>', speech: 'はな', km: 'ច្រមុះ' },
+            { ja: '<ruby>耳<rt>みみ</rt></ruby>', speech: 'みみ', km: 'ត្រចៀក' },
+            { ja: '<ruby>頬<rt>ほお</rt></ruby>', speech: 'ほお', km: 'ថ្ពាល់' },
+            { ja: '<ruby>首<rt>くび</rt></ruby>', speech: 'くび', km: 'ក' },
+            { ja: '<ruby>肩<rt>かた</rt></ruby>', speech: 'かた', km: 'ស្មា' },
+            { ja: '<ruby>背<rt>せ</rt></ruby>', speech: 'せ', km: 'ខ្នង' },
+            { ja: '<ruby>腰<rt>こし</rt></ruby>', speech: 'こし', km: 'ចង្កេះ' },
+            { ja: '<ruby>尻<rt>しり</rt></ruby>', speech: 'しり', km: 'ត្រគាក/គូទ' },
+            { ja: '<ruby>腿<rt>もも</rt></ruby>', speech: 'もも', km: 'ភ្លៅ' },
+            { ja: '<ruby>尾<rt>お</rt></ruby>', speech: 'お', km: 'កន្ទុយ' },
+            { ja: '<ruby>前肢<rt>まえあし</rt></ruby>', speech: 'まえあし', km: 'ជើងមុខ' },
+            { ja: '<ruby>後肢<rt>あとあし</rt></ruby>', speech: 'あとあし', km: 'ជើងក្រោយ' },
+            { ja: '<ruby>胸<rt>むね</rt></ruby>', speech: 'むね', km: 'ទ្រូង' },
+            { ja: '<ruby>腹<rt>はら</rt></ruby>', speech: 'はら', km: 'ពោះ' },
+            { ja: '<ruby>飛節<rt>ひせつ</rt></ruby>', speech: 'ひせつ', km: 'កែងជើងក្រោយ (Hock)' },
+            { ja: '<ruby>豚舎<rt>とんしゃ</rt></ruby>', speech: 'とんしゃ', km: 'ក្រោលជ្រូក' },
+            { ja: '<ruby>豚房<rt>とんぼう</rt></ruby>', speech: 'とんぼう', km: 'បន្ទប់/ទ្រុងជ្រូក' },
+            { ja: '<ruby>スノコ床<rt>すのこゆか</rt></ruby>', speech: 'すのこゆか', km: 'កម្រាលចន្លោះ (Slat floor)' },
+            { ja: '<ruby>分娩柵<rt>ぶんべんさく</rt></ruby>', speech: 'ぶんべんさく', km: 'របងសម្រាលកូនជ្រូក (Farrowing crate)' },
+            { ja: '<ruby>空胎日数<rt>くうたいにっすう</rt></ruby>', speech: 'くうたいにっすう', km: 'ចំនួនថ្ងៃដែលមេពុំទាន់មានគភ៌' },
+            { ja: '<ruby>日増体量<rt>にちぞうたいりょう</rt></ruby>', speech: 'にちぞうたいりょう', km: 'ទម្ងន់កើនឡើងប្រចាំថ្ងៃ (DG)' },
+            { ja: '<ruby>飼料要求率<rt>しりょうようきゅうりつ</rt></ruby>', speech: 'しりょうようきゅうりつ', km: 'អត្រាបំប្លែងចំណី (FCR)' },
+            { ja: '<ruby>歩留まり<rt>ぶどまり</rt></ruby>', speech: 'ぶどまり', km: 'អត្រាទិន្នផលសាច់សុទ្ធ' },
+            { ja: '<ruby>格付け<rt>かくづけ</rt></ruby>', speech: 'かくづけ', km: 'ការចាត់ថ្នាក់គុណភាព' },
+            { ja: '<ruby>霜降り<rt>しもふり</rt></ruby>', speech: 'しもふり', km: 'សាច់មានខ្លាញ់ជ្រៀក (Marbling)' },
+            { ja: '<ruby>屠殺<rt>とさつ</rt></ruby>', speech: 'とさつ', km: 'ការពិឃាតសត្វ' },
+            { ja: '<ruby>解体<rt>かいたい</rt></ruby>', speech: 'かいたい', km: 'ការវះពន្លះសាច់' },
+            { ja: '<ruby>獣医師<rt>じゅういし</rt></ruby>', speech: 'じゅういし', km: 'ពេទ្យសត្វ' },
+            { ja: '<ruby>防疫<rt>ぼうえき</rt></ruby>', speech: 'ぼうえき', km: 'ការទប់ស្កាត់ការឆ្លងរោគ' },
+            { ja: '<ruby>消毒<rt>しょうどく</rt></ruby>', speech: 'しょうどく', km: 'ការសម្លាប់មេរោគ' },
+            { ja: '<ruby>検疫<rt>けんえき</rt></ruby>', speech: 'けんえき', km: 'ការធ្វើចត្តាឡីស័ក/ការត្រួតពិនិត្យជំងឺឆ្លង' },
+            { ja: '<ruby>隔離<rt>かくり</rt></ruby>', speech: 'かくり', km: 'ការដាក់នៅដាច់ដោយឡែក' },
+            { ja: '<ruby>予防接種<rt>よぼうせっしゅ</rt></ruby>', speech: 'よぼうせっしゅ', km: 'ការចាក់វ៉ាក់សាំងការពារ' },
+            { ja: '<ruby>衛生管理<rt>えいせいかんり</rt></ruby>', speech: 'えいせいかんり', km: 'ការគ្រប់គ្រងអនាម័យ' },
+            { ja: '<ruby>アニマルウェルフェア<rt>あにまるうぇるふぇあ</rt></ruby>', speech: 'あにまるうぇるふぇあ', km: 'សុខុមាលភាពសត្វ' },
+            { ja: '<ruby>飼養管理<rt>しようかんり</rt></ruby>', speech: 'しようかんり', km: 'ការគ្រប់គ្រងការចិញ្ចឹម' },
+            { ja: '<ruby>増体<rt>ぞうたい</rt></ruby>', speech: 'ぞうたい', km: 'ការឡើងទម្ងន់' },
+            { ja: '<ruby>牧場<rt>ぼくじょう</rt></ruby>', speech: 'ぼくじょう', km: 'កសិដ្ឋានចិញ្ចឹមសត្វ' },
+            { ja: '<ruby>牧草地<rt>ぼくそうち</rt></ruby>', speech: 'ぼくそうち', km: 'វាលស្មៅចំណីសត្វ' },
+            { ja: '<ruby>繁殖経営<rt>はんしょくけいえい</rt></ruby>', speech: 'はんしょくけいえい', km: 'អាជីវកម្មបន្តពូជសត្វ' },
+            { ja: '<ruby>鶏<rt>にわとり</rt></ruby>', speech: 'にわとり', km: 'មាន់' },
+            { ja: '<ruby>採卵鶏<rt>さいらんけい</rt></ruby>', speech: 'さいらんけい', km: 'មាន់ពង' },
+            { ja: '<ruby>ブロイラー<rt>ぶろいらー</rt></ruby>', speech: 'ぶろいらー', km: 'មាន់សាច់ (Broiler)' },
+            { ja: '<ruby>地鶏<rt>じどり</rt></ruby>', speech: 'じどり', km: 'មាន់ស្រុក/មាន់ពូជក្នុងស្រុក' },
+            { ja: '<ruby>単冠白色レグホン<rt>たんかんはくしょくれぐほん</rt></ruby>', speech: 'たんかんはくしょくれぐほん', km: 'ពូជមាន់ពងស (White Leghorn)' },
+            { ja: '<ruby>ロードアイランドレッド<rt>ろーどあいらんどれっど</rt></ruby>', speech: 'ろーどあいらんどれっど', km: 'ពូជមាន់ពងត្នោត (Rhode Island Red)' },
+            { ja: '<ruby>白色コーニッシュ<rt>はくしょくこーにっしゅ</rt></ruby>', speech: 'はくしょくこーにっしゅ', km: 'ពូជមាន់សាច់ស (White Cornish)' },
+            { ja: '<ruby>白色プリマスロック<rt>はくしょくぷりますろっく</rt></ruby>', speech: 'はくしょくぷりますろっく', km: 'ពូជមាន់សាច់ស (White Plymouth Rock)' },
+            { ja: '<ruby>雛<rt>ひな</rt></ruby>', speech: 'ひな', km: 'កូនមាន់' },
+            { ja: '<ruby>成鶏<rt>せいけい</rt></ruby>', speech: 'せいけい', km: 'មាន់ធំពេញវ័យ' },
+            { ja: '<ruby>幼すう<rt>ようすう</rt></ruby>', speech: 'ようすう', km: 'កូនមាន់បឋម (០-៤ សប្តាហ៍)' },
+            { ja: '<ruby>中すう<rt>ちゅうすう</rt></ruby>', speech: 'ちゅうすう', km: 'មាន់ជំទង់ (៤-១០ សប្តាហ៍)' },
+            { ja: '<ruby>大すう<rt>だいすう</rt></ruby>', speech: 'だいすう', km: 'មាន់ជំទង់ធំ (១០-២០ សប្តាហ៍)' },
+            { ja: '<ruby>種卵<rt>しゅらん</rt></ruby>', speech: 'しゅらん', km: 'ពងសម្រាប់ភ្ញាស់ពូជ' },
+            { ja: '<ruby>有精卵<rt>ゆうせいらん</rt></ruby>', speech: 'ゆうせいらん', km: 'ពងមាន់មានមេជីវិត (អាចញាស់បាន)' },
+            { ja: '<ruby>無精卵<rt>むせいらん</rt></ruby>', speech: 'むせいらん', km: 'ពងមាន់គ្មានមេជីវិត' },
+            { ja: '<ruby>孵化<rt>ふか</rt></ruby>', speech: 'ふか', km: 'ការញាស់ពង' },
+            { ja: '<ruby>育すう<rt>いくすう</rt></ruby>', speech: 'いくすう', km: 'ការចិញ្ចឹមកូនមាន់' },
+            { ja: '<ruby>換羽<rt>かんう</rt></ruby>', speech: 'かんう', km: 'ការជម្រុះ/ផ្លាស់រោម' },
+            { ja: '<ruby>断嘴<rt>だんし</rt></ruby>', speech: 'だんし', km: 'ការកាត់ចំពុះមាន់' },
+            { ja: '<ruby>鶏舎<rt>けいしゃ</rt></ruby>', speech: 'けいしゃ', km: 'ក្រោលមាន់/រោងមាន់' },
+            { ja: '<ruby>ケージ飼育<rt>けーじしいく</rt></ruby>', speech: 'けーじしいく', km: 'ការចិញ្ចឹមក្នុងទ្រុងកន្ត្រក' },
+            { ja: '<ruby>平飼い<rt>ひらがい</rt></ruby>', speech: 'ひらがい', km: 'ការចិញ្ចឹមលែងលើកម្រាល' },
+            { ja: '<ruby>放し飼い<rt>はなしがい</rt></ruby>', speech: 'はなしがい', km: 'ការចិញ្ចឹមលែងក្រៅវាល' },
+            { ja: '<ruby>開放型鶏舎<rt>かいほうがたけいしゃ</rt></ruby>', speech: 'かいほうがたけいしゃ', km: 'រោងមាន់ប្រភេទបើកចំហ' },
+            { ja: '<ruby>ウインドウレス鶏舎<rt>ういんどうれすけいしゃ</rt></ruby>', speech: 'ういんどうれすけいしゃ', km: 'រោងមាន់ប្រភេទបិទជិតគ្មានបង្អួច' },
+            { ja: '<ruby>給餌器<rt>きゅうじき</rt></ruby>', speech: 'きゅうじき', km: 'ស្នូក/ឧបករណ៍ផ្ដល់ចំណី' },
+            { ja: '<ruby>給水器<rt>きゅうすいき</rt></ruby>', speech: 'きゅうすいき', km: 'ឧបករណ៍ផ្ដល់ទឹក' },
+            { ja: '<ruby>集卵<rt>しゅうらん</rt></ruby>', speech: 'しゅうらん', km: 'ការប្រមូលពង' },
+            { ja: '<ruby>除糞<rt>じょふん</rt></ruby>', speech: 'じょふん', km: 'ការសម្អាតលាមកសត្វ' },
+            { ja: '<ruby>産卵率<rt>さんらんりつ</rt></ruby>', speech: 'さんらんりつ', km: 'អត្រាពង' },
+            { ja: '<ruby>産卵量<rt>さんらんりょう</rt></ruby>', speech: 'さんらんりょう', km: 'បរិមាណផលពង' },
+            { ja: '<ruby>卵重<rt>らんじゅう</rt></ruby>', speech: 'らんじゅう', km: 'ទម្ងន់ពង' },
+            { ja: '<ruby>卵殻<rt>らんかく</rt></ruby>', speech: 'らんかく', km: 'សំបកពង' },
+            { ja: '<ruby>卵黄<rt>らんおう</rt></ruby>', speech: 'らんおう', km: 'ពងក្រហម (ផ្នែកលឿង)' },
+            { ja: '<ruby>卵白<rt>らんぱく</rt></ruby>', speech: 'らんぱく', km: 'ពងស' },
+            { ja: '<ruby>強制換羽<rt>きょうせいかんう</rt></ruby>', speech: 'きょうせいかんう', km: 'ការបង្ខំឱ្យជម្រុះរោម (ផ្អាកចំណី/ទឹក)' },
+            { ja: '<ruby>ハウユニット<rt>はうゆにっと</rt></ruby>', speech: 'はうゆにっと', km: 'ខ្នាតវាស់គុណភាពពងស (Haugh Unit)' },
+            { ja: '<ruby>エッグトレイ<rt>えっぐとれい</rt></ruby>', speech: 'えっぐとれい', km: 'ថាសដាក់ពងមាន់' },
+            { ja: '<ruby>GPセンター<rt>じーぴーせんたー</rt></ruby>', speech: 'じーぴーせんたー', km: 'រោងចក្រលាង ជ្រើស និងវេចខ្ចប់ពង (Grading & Packing)' },
+            { ja: '<ruby>オールインオールアウト<rt>おーるいんおーるあうと</rt></ruby>', speech: 'おーるいんおーるあうと', km: 'ប្រព័ន្ធចិញ្ចឹមចូលព្រមគ្នា ចេញព្រមគ្នា' },
+            { ja: '<ruby>ワクチネーション<rt>わくちねーしょん</rt></ruby>', speech: 'わくちねーしょん', km: 'ការផ្ដល់វ៉ាក់សាំង' },
+            { ja: '<ruby>マレック病<rt>まれっくびょう</rt></ruby>', speech: 'まれっくびょう', km: 'ជំងឺម៉ារ៉េក (លើមាន់)' },
+            { ja: '<ruby>ニューカッスル病<rt>にゅーかっするびょう</rt></ruby>', speech: 'にゅーかっするびょう', km: 'ជំងឺញូកាសល' },
+            { ja: '<ruby>鶏痘<rt>けいとう</rt></ruby>', speech: 'けいとう', km: 'ជំងឺអុតមាន់' },
+            { ja: '<ruby>口蹄疫<rt>こうていえき</rt></ruby>', speech: 'こうていえき', km: 'ជំងឺអុតក្ដារៀន (FMD)' },
+            { ja: '<ruby>豚熱<rt>とんねつ</rt></ruby>', speech: 'とんねつ', km: 'ជំងឺប៉េស្តជ្រូកបុរាណ (CSF)' },
+            { ja: '<ruby>アフリカ豚熱<rt>あふりかとんねつ</rt></ruby>', speech: 'あふりかとんねつ', km: 'ជំងឺប៉េស្តជ្រូកអាហ្វ្រិក (ASF)' },
+            { ja: '<ruby>鳥インフルエンザ<rt>とりいんふるえんざ</rt></ruby>', speech: 'とりいんふるえんざ', km: 'ជំងឺផ្ដាសាយបក្សី' },
+            { ja: '<ruby>高病原性鳥インフルエンザ<rt>こうびょうげんせいとりいんふるえんざ</rt></ruby>', speech: 'こうびょうげんせいとりいんふるえんざ', km: 'ជំងឺផ្ដាសាយបក្សីកម្រិតធ្ងន់ធ្ងរ (HPAI)' },
+            { ja: '<ruby>豚伝染性胃腸炎<rt>とんでんせんせいいちょうえん</rt></ruby>', speech: 'とんでんせんせいいちょうえん', km: 'ជំងឺរលាកក្រពះពោះវៀនឆ្លងជ្រូក (TGE)' },
+            { ja: '<ruby>豚繁殖呼吸障害症候群<rt>とんはんしょくこきゅうしょうがいしょうこうぐん</rt></ruby>', speech: 'とんはんしょくこきゅうしょうがいしょうこうぐん', km: 'ជំងឺខូចប្រព័ន្ធបន្តពូជនិងដង្ហើមជ្រូក (PRRS)' },
+            { ja: '<ruby>豚流行性下痢<rt>とんりゅうこうせいげり</rt></ruby>', speech: 'とんりゅうこうせいげり', km: 'ជំងឺរាគរាតត្បាតជ្រូក (PED)' },
+            { ja: '<ruby>腐蛆病<rt>ふそびょう</rt></ruby>', speech: 'ふそびょう', km: 'ជំងឺរលួយដង្កូវឃ្មុំ (Foulbrood)' },
+            { ja: '<ruby>バロア病<rt>ばろあびょう</rt></ruby>', speech: 'ばろあびょう', km: 'ជំងឺចៃឃ្មុំ (Varroa Mite)' },
+            { ja: '<ruby>ワクモ<rt>わくも</rt></ruby>', speech: 'わくも', km: 'ចៃមាន់ (បឺតឈាម)' },
+            { ja: '<ruby>ノゼマ病<rt>のぜまびょう</rt></ruby>', speech: 'のぜまびょう', km: 'ជំងឺណូហ្សេម៉ា (ប៉ារ៉ាស៊ីតលើឃ្មុំ)' },
+            { ja: '<ruby>コクシジウム症<rt>こくしじうむしょう</rt></ruby>', speech: 'こくしじうむしょう', km: 'ជំងឺកូកស៊ីឌីយ៉ូស (ប៉ារ៉ាស៊ីតបង្កឱ្យរាគឈាម)' },
+            { ja: '<ruby>マイコプラズマ<rt>まいこぷらずま</rt></ruby>', speech: 'まいこぷらずま', km: 'មេរោគម៉ាយកូប្លាស្មា (បង្កជំងឺផ្លូវដង្ហើម)' },
+            { ja: '<ruby>豚赤痢<rt>とんせきり</rt></ruby>', speech: 'とんせきり', km: 'ជំងឺមួលរាគឈាមជ្រូក' },
+            { ja: '<ruby>委縮性鼻炎<rt>いしゅくせいびえん</rt></ruby>', speech: 'いしゅくせいびえん', km: 'ជំងឺរលាកច្រមុះវៀច/រួមតូចជ្រូក (AR)' },
+            { ja: '<ruby>オーエスキー病<rt>おーえすきーびょう</rt></ruby>', speech: 'おーえすきーびょう', km: 'ជំងឺឆ្កែឆ្កួតក្លែងក្លាយលើជ្រូក (Pseudorabies)' },
+            { ja: '<ruby>トキソプラズマ病<rt>ときそぷらずまびょう</rt></ruby>', speech: 'ときそぷらずまびょう', km: 'ជំងឺតូកសូប្លាស្មូស' },
+            { ja: '<ruby>サルモネラ<rt>さるもねら</rt></ruby>', speech: 'さるもねら', km: 'បាក់តេរីសាល់ម៉ូណេឡា' },
+            { ja: '<ruby>大腸菌<rt>だいちょうきん</rt></ruby>', speech: 'だいちょうきん', km: 'បាក់តេរីពោះវៀនធំ (E. coli)' },
+            { ja: '<ruby>レンサ球菌<rt>れんさきゅうきん</rt></ruby>', speech: 'れんさきゅうきん', km: 'បាក់តេរីស្ត្រេបតូកូក' },
+            { ja: '<ruby>豚回虫<rt>とんかいちゅう</rt></ruby>', speech: 'とんかいちゅう', km: 'ព្រូនមូលជ្រូក (Ascaris)' },
+            { ja: '<ruby>寄生虫<rt>きせいちゅう</rt></ruby>', speech: 'きせいちゅう', km: 'ប៉ារ៉ាស៊ីត/ព្រូន' },
+            { ja: '<ruby>病原体<rt>びょうげんたい</rt></ruby>', speech: 'びょうげんたい', km: 'ភ្នាក់ងារបង្កជំងឺ/មេរោគ' },
+            { ja: '<ruby>ワクチン<rt>わくちん</rt></ruby>', speech: 'わくちん', km: 'វ៉ាក់សាំង' },
+            { ja: '<ruby>農業<rt>のうぎょう</rt></ruby>', speech: 'のうぎょう', km: 'កសិកម្ម' },
+            { ja: '<ruby>農家<rt>のうか</rt></ruby>', speech: 'のうか', km: 'កសិករ/គ្រួសារកសិករ' },
+            { ja: '<ruby>経営<rt>けいえい</rt></ruby>', speech: 'けいえい', km: 'ការគ្រប់គ្រងអាជីវកម្ម' },
+            { ja: '<ruby>一貫経営<rt>いっかんけいえい</rt></ruby>', speech: 'いっかんけいえい', km: 'អាជីវកម្មខ្សែច្រវាក់ពេញលេញ (បង្កាត់ដល់លក់)' },
+            { ja: '<ruby>肥育経営<rt>ひいくけいえい</rt></ruby>', speech: 'ひいくけいえい', km: 'អាជីវកម្មចិញ្ចឹមបំប៉នយកសាច់' },
+            { ja: '<ruby>農協<rt>のうきょう</rt></ruby>', speech: 'のうきょう', km: 'សហករណ៍កសិកម្ម (JA)' },
+            { ja: '<ruby>農地<rt>のうち</rt></ruby>', speech: 'のうち', km: 'ដីកសិកម្ម' },
+            { ja: '<ruby>圃場<rt>ほじょう</rt></ruby>', speech: 'ほじょう', km: 'ដីស្រែចម្ការ' },
+            { ja: '<ruby>牧草<rt>ぼくそう</rt></ruby>', speech: 'ぼくそう', km: 'ស្មៅចំណីសត្វ' },
+            { ja: '<ruby>乾草<rt>かんそう</rt></ruby>', speech: 'かんそう', km: 'ស្មៅស្ងួត/ចំបើងស្ងួត' },
+            { ja: '<ruby>エコフィード<rt>えこふぃーど</rt></ruby>', speech: 'えこふぃーど', km: 'ចំណីសត្វកែច្នៃពីសំណល់អាហារ (Ecofeed)' },
+            { ja: '<ruby>TMR<rt>てぃーえむあーる</rt></ruby>', speech: 'てぃーえむあーる', km: 'ចំណីចម្រុះពេញលេញ (Total Mixed Ration)' },
+            { ja: '<ruby>コントラクター<rt>こんとらくたー</rt></ruby>', speech: 'こんとらくたー', km: 'អ្នកម៉ៅការសេវាកម្មកសិកម្ម' },
+            { ja: '<ruby>インテグレーション<rt>いんてぐれーしょん</rt></ruby>', speech: 'いんてぐれーしょん', km: 'ប្រព័ន្ធផលិតកម្មសមាហរណកម្ម' },
+            { ja: '<ruby>ハインリッヒの法則<rt>はいんりっひのほうそく</rt></ruby>', speech: 'はいんりっひのほうそく', km: 'ច្បាប់ហៃនរិច (ច្បាប់គ្រោះថ្នាក់ ១:២៩:៣០០)' },
+            { ja: '<ruby>ヒヤリ・ハット<rt>ひやりはっと</rt></ruby>', speech: 'ひやりはっと', km: 'ហេតុការណ៍ស្ទើរកើតគ្រោះថ្នាក់' },
+            { ja: '<ruby>労働災害<rt>ろうどうさいがい</rt></ruby>', speech: 'ろうどうさいがい', km: 'គ្រោះថ្នាក់ការងារ' },
+            { ja: '<ruby>安全教育<rt>あんぜんきょういく</rt></ruby>', speech: 'あんぜんきょういく', km: 'ការអប់រំសុវត្ថិភាពការងារ' },
+            { ja: '<ruby>作業計画<rt>さぎょうけいかく</rt></ruby>', speech: 'さぎょうけいかく', km: 'ផែនការប្រតិបត្តិការងារ' },
+            { ja: '<ruby>安全管理<rt>あんぜんかんり</rt></ruby>', speech: 'あんぜんかんり', km: 'ការគ្រប់គ្រងសុវត្ថិភាព' }
+        ];
+        // ============================================================
+        // 📌 STATE
+        // ============================================================
+
+        var vocabPage = 0;
+        var vocabPerPage = 5;
+        var showKh = true;
+        var showFuri = true;
+        var loopEnabled = false;
+        var useGoogleTTS = false;   // Default = Speech Synthesis
+        var currentAudio = null;
+        var isSpeaking = false;
+        var activeLoopType = '';
+        var activeLoopIndex = -1;
+
+        // ============================================================
+        // 📌 SPEECH HELPERS
+        // ============================================================
+
+        function getSpeechText(wordObj) {
+            if (wordObj.speech && wordObj.speech.trim() !== '') {
+                return wordObj.speech.trim();
+            }
+            return stripFurigana(wordObj.ja);
+        }
+
+        function speakWithWebSpeech(text, callback) {
+            if (!window.speechSynthesis) {
+                if (callback) callback();
+                return;
+            }
+            
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ja-JP';
+            u.rate = 0.85;
+            
+            var voices = window.speechSynthesis.getVoices();
+            var googleVoice = voices.find(function(v) {
+                return v.lang === 'ja-JP' && v.name.toLowerCase().includes('google');
+            });
+            if (googleVoice) {
+                u.voice = googleVoice;
+            }
+            
+            u.onstart = function() { isSpeaking = true; };
+            u.onend = function() {
+                isSpeaking = false;
+                if (loopEnabled && callback) callback();
+            };
+            u.onerror = function() {
+                isSpeaking = false;
+                if (loopEnabled && callback) setTimeout(callback, 1000);
+            };
+            window.speechSynthesis.speak(u);
+        }
+
+        function speakVocabText(text, callback) {
+            if (!text || text.trim() === '') {
+                if (callback) callback();
+                return;
+            }
+
+            // ប្រសិនបើ Google TTS បើក → ប្រើ Google Translate TTS
+            if (useGoogleTTS) {
+                if (typeof Android !== 'undefined' && typeof Android.speak === 'function') {
+                    Android.speak(text);
+                    isSpeaking = true;
+                    if (loopEnabled) {
+                        var est = Math.min(text.length * 100 + 2000, 30000);
+                        setTimeout(function() {
+                            isSpeaking = false;
+                            if (loopEnabled && callback) callback();
+                        }, est);
+                    }
+                    return;
+                }
+
+                try {
+                    var url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + 
+                              encodeURIComponent(text) + '&tl=ja&client=tw-ob';
+                    
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+                    
+                    var audio = new Audio(url);
+                    currentAudio = audio;
+                    audio.play();
+                    isSpeaking = true;
+                    
+                    audio.onended = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        if (loopEnabled && callback) callback();
+                    };
+                    
+                    audio.onerror = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        // បើ Google TTS បរាជ័យ → ប្រើ Speech Synthesis វិញ
+                        speakWithWebSpeech(text, callback);
+                    };
+                    
+                    return;
+                } catch (e) {
+                    speakWithWebSpeech(text, callback);
+                }
+                return;
+            }
+
+            // ប្រសិនបើ Google TTS បិទ → ប្រើ Speech Synthesis
+            speakWithWebSpeech(text, callback);
+        }
+
+        function stopSpeech() {
+            loopEnabled = false;
+            activeLoopType = '';
+            activeLoopIndex = -1;
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            
+            if (typeof Android !== 'undefined' && typeof Android.stop === 'function') {
+                Android.stop();
+            }
+            
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            isSpeaking = false;
+            showToast('⏸ បញ្ឈប់សំឡេង');
+            updateLoopBtnUI();
+            renderVocabulary();
+        }
+
+        // ============================================================
+        // 📌 UTILITY
+        // ============================================================
+
+        function stripFurigana(html) {
+            if (!html) return '';
+            var div = document.createElement('div');
+            div.innerHTML = html;
+            var rubies = div.querySelectorAll('ruby');
+            rubies.forEach(function(ruby) {
+                var rt = ruby.querySelector('rt');
+                var furigana = rt ? rt.textContent || rt.innerText || '' : '';
+                var kanji = ruby.textContent || ruby.innerText || '';
+                if (rt) { kanji = kanji.replace(rt.textContent || rt.innerText || '', ''); }
+                kanji = kanji.trim();
+                var replacement = furigana || kanji;
+                ruby.replaceWith(replacement);
+            });
+            div.querySelectorAll('rt, rp').forEach(function(el) { el.remove(); });
+            return div.textContent || div.innerText || '';
+        }
+
+        function showToast(msg) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 3000);
+        }
+
+        function toggleKh() {
+            showKh = !showKh;
+            document.querySelectorAll('.vocab-km').forEach(function(el) {
+                if (showKh) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+            var btn = document.getElementById('toggleKh');
+            btn.textContent = showKh ? 'ខ្មែរ' : 'ខ្មែរ';
+            btn.className = showKh ? 'active' : 'inactive';
+        }
+
+        function toggleFuri() {
+            showFuri = !showFuri;
+            document.querySelectorAll('rt').forEach(function(el) {
+                el.style.display = showFuri ? '' : 'none';
+            });
+            var btn = document.getElementById('toggleFuri');
+            btn.textContent = showFuri ? 'ふり' : 'ふり';
+            btn.className = showFuri ? 'active' : 'inactive';
+        }
+
+        function toggleGtts() {
+            useGoogleTTS = !useGoogleTTS;
+            var btn = document.getElementById('toggleGtts');
+            if (useGoogleTTS) {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-on';
+                showToast('🔊 Google TTS បើក');
+            } else {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-off';
+                showToast('🔊 Speech Synthesis បើក');
+            }
+            // រក្សាទុកការកំណត់
+            try {
+                localStorage.setItem('useGoogleTTS', useGoogleTTS ? 'true' : 'false');
+            } catch(e) {}
+        }
+
+        // ============================================================
+        // 📖 VOCABULARY RENDER
+        // ============================================================
+
+        function renderVocabulary() {
+            if (!vocabData || vocabData.length === 0) {
+                document.getElementById('contentArea').innerHTML = 
+                    '<div style="text-align:center;padding:40px 0;color:#a0aec0"><p>សូមបញ្ចូលពាក្យក្នុង <code>vocabData</code></p></div>';
+                return;
+            }
+
+            var totalPages = Math.ceil(vocabData.length / vocabPerPage);
+            var start = vocabPage * vocabPerPage;
+            var end = Math.min(start + vocabPerPage, vocabData.length);
+            var pageWords = vocabData.slice(start, end);
+
+            document.getElementById('prevBtn').disabled = (vocabPage === 0);
+            document.getElementById('nextBtn').disabled = (vocabPage >= totalPages - 1);
+
+            var html = '<div class="vocab-header">';
+            html += '<h2>🐄 ចិញ្ចឹមសត្វ</h2>';
+            html += '<div class="vocab-actions">';
+            html += '<button onclick="speakPageVocab()">🔊 អាន១ទំព័រ</button>';
+            html += '<button onclick="speakAllVocab()">🔊 អានទាំងអស់</button>';
+            html += '<button id="vocabLoopBtn" onclick="toggleLoop()">🔁</button>';
+            html += '<button class="stop-btn" onclick="stopSpeech()">⏸ ឈប់</button>';
+            html += '</div></div>';
+
+            html += '<div class="vocab-list">';
+            pageWords.forEach(function(word, index) {
+                var realIndex = start + index;
+                var isLooping = loopEnabled && activeLoopType === 'single' && activeLoopIndex === realIndex;
+                html += '<div class="vocab-item" data-index="' + realIndex + '">';
+                html += '<div class="vocab-ja"><span class="num">' + (realIndex + 1) + '.</span> ' + word.ja + '</div>';
+                html += '<div class="vocab-km">' + word.km + '</div>';
+                html += '<button class="vocab-speak' + (isLooping ? ' listening' : '') + '" onclick="speakSingleWord(' + realIndex + ')">🔊</button>';
+                html += '</div>';
+            });
+            html += '</div>';
+
+            html += '<div class="nav-row">';
+            html += '<button class="btn-prev" onclick="prevVocabPage()" ' + (vocabPage === 0 ? 'disabled' : '') +
+                '>◀ មុន</button>';
+            html += '<span class="page-indicator">' + (vocabPage + 1) + '/' + totalPages + '</span>';
+            html += '<button class="btn-next" onclick="nextVocabPage()" ' + (vocabPage >= totalPages - 1 ? 'disabled' : '') +
+                '>បន្ទាប់ ▶</button>';
+            html += '</div>';
+
+            document.getElementById('contentArea').innerHTML = html;
+            updateLoopBtnUI();
+            document.querySelectorAll('rt').forEach(function(el) { el.style.display = showFuri ? '' : 'none'; });
+        }
+
+        // ============================================================
+        // 🔁 LOOP CONTROL
+        // ============================================================
+
+        function toggleLoop() {
+            if (loopEnabled) {
+                loopEnabled = false;
+                activeLoopType = '';
+                activeLoopIndex = -1;
+                stopSpeech();
+                showToast('⏸ បិទ Loop');
+                updateLoopBtnUI();
+                renderVocabulary();
+                return;
+            }
+            
+            loopEnabled = true;
+            showToast('🔁 បើក Loop');
+            updateLoopBtnUI();
+        }
+
+        function updateLoopBtnUI() {
+            var btn = document.getElementById('vocabLoopBtn');
+            if (btn) {
+                if (loopEnabled) {
+                    btn.textContent = '🔁 LOOP';
+                    btn.classList.add('loop-on');
+                } else {
+                    btn.textContent = '🔁';
+                    btn.classList.remove('loop-on');
+                }
+            }
+        }
+
+        // ============================================================
+        // 🔊 SPEAK FUNCTIONS
+        // ============================================================
+
+        function speakSingleWord(index) {
+            if (!vocabData || vocabData.length === 0) return;
+            var word = vocabData[index];
+            if (!word) return;
+
+            if (!loopEnabled) {
+                var text = getSpeechText(word);
+                speakVocabText(text, function() {});
+                return;
+            }
+
+            activeLoopType = 'single';
+            activeLoopIndex = index;
+            showToast('🔁 Loop ពាក្យ ' + (index + 1));
+            speakWordLoop(index);
+        }
+
+        function speakWordLoop(index) {
+            if (!loopEnabled || activeLoopType !== 'single' || activeLoopIndex !== index) {
+                return;
+            }
+
+            var word = vocabData[index];
+            if (!word) return;
+
+            var text = getSpeechText(word);
+            speakVocabText(text, function() {
+                if (loopEnabled && activeLoopType === 'single' && activeLoopIndex === index) {
+                    setTimeout(function() {
+                        speakWordLoop(index);
+                    }, 500);
+                }
+            });
+
+            renderVocabulary();
+            var items = document.querySelectorAll('.vocab-item');
+            items.forEach(function(item) {
+                var idx = parseInt(item.dataset.index);
+                var btn = item.querySelector('.vocab-speak');
+                if (idx === index && loopEnabled && activeLoopType === 'single') {
+                    btn.classList.add('listening');
+                } else {
+                    btn.classList.remove('listening');
+                }
+            });
+        }
+
+        function speakPageVocab() {
+            if (!vocabData || vocabData.length === 0) return;
+
+            if (!loopEnabled) {
+                var start = vocabPage * vocabPerPage;
+                var end = Math.min(start + vocabPerPage, vocabData.length);
+                var pageWords = vocabData.slice(start, end);
+                var texts = [];
+                pageWords.forEach(function(w) {
+                    texts.push(getSpeechText(w));
+                });
+                if (texts.length === 0) return;
+                var fullText = texts.join('。 ');
+                speakVocabText(fullText, function() {});
+                return;
+            }
+
+            activeLoopType = 'page';
+            activeLoopIndex = -1;
+            showToast('🔁 Loop មួយទំព័រ');
+            speakPageLoop();
+        }
+
+        function speakPageLoop() {
+            if (!loopEnabled || activeLoopType !== 'page') {
+                return;
+            }
+
+            if (!vocabData || vocabData.length === 0) return;
+            var start = vocabPage * vocabPerPage;
+            var end = Math.min(start + vocabPerPage, vocabData.length);
+            var pageWords = vocabData.slice(start, end);
+            var texts = [];
+            pageWords.forEach(function(w) {
+                texts.push(getSpeechText(w));
+            });
+            if (texts.length === 0) return;
+            var fullText = texts.join('。 ');
+            speakVocabText(fullText, function() {
+                if (loopEnabled && activeLoopType === 'page') {
+                    setTimeout(function() {
+                        speakPageLoop();
+                    }, 500);
+                }
+            });
+        }
+
+        function speakAllVocab() {
+            if (!vocabData || vocabData.length === 0) return;
+
+            if (!loopEnabled) {
+                var texts = [];
+                vocabData.forEach(function(w) {
+                    texts.push(getSpeechText(w));
+                });
+                if (texts.length === 0) return;
+                var fullText = texts.join('。 ');
+                speakVocabText(fullText, function() {});
+                return;
+            }
+
+            activeLoopType = 'all';
+            activeLoopIndex = -1;
+            showToast('🔁 Loop ទាំងអស់');
+            speakAllLoop();
+        }
+
+        function speakAllLoop() {
+            if (!loopEnabled || activeLoopType !== 'all') {
+                return;
+            }
+
+            if (!vocabData || vocabData.length === 0) return;
+            var texts = [];
+            vocabData.forEach(function(w) {
+                texts.push(getSpeechText(w));
+            });
+            if (texts.length === 0) return;
+            var fullText = texts.join('。 ');
+            speakVocabText(fullText, function() {
+                if (loopEnabled && activeLoopType === 'all') {
+                    setTimeout(function() {
+                        speakAllLoop();
+                    }, 500);
+                }
+            });
+        }
+
+        // ============================================================
+        // 📄 NAVIGATION
+        // ============================================================
+
+        function nextVocabPage() {
+            if (!vocabData || vocabData.length === 0) return;
+            var totalPages = Math.ceil(vocabData.length / vocabPerPage);
+            if (vocabPage < totalPages - 1) {
+                vocabPage++;
+                if (activeLoopType === 'single') {
+                    activeLoopType = '';
+                    activeLoopIndex = -1;
+                }
+                renderVocabulary();
+            }
+        }
+
+        function prevVocabPage() {
+            if (vocabPage > 0) {
+                vocabPage--;
+                if (activeLoopType === 'single') {
+                    activeLoopType = '';
+                    activeLoopIndex = -1;
+                }
+                renderVocabulary();
+            }
+        }
+
+        // ============================================================
+        // 🚀 START
+        // ============================================================
+
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+        }
+
+        // ស្ដារការកំណត់ Google TTS
+        try {
+            var saved = localStorage.getItem('useGoogleTTS');
+            if (saved !== null) {
+                useGoogleTTS = saved === 'true';
+            }
+        } catch(e) {}
+
+        // កំណត់ស្ថានភាពប៊ូតុង GTTS
+        var gttsBtn = document.getElementById('toggleGtts');
+        if (gttsBtn) {
+            if (useGoogleTTS) {
+                gttsBtn.className = 'gtts-on';
+            } else {
+                gttsBtn.className = 'gtts-off';
+            }
+        }
+
+        renderVocabulary();
+    </script>
+</body>
+</html>

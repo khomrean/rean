@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>កម្មវិធីរៀន</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f4f8;
+            padding: 12px;
+            max-width: 480px;
+            margin: auto;
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(135deg, #38a169, #2f855a);
+            color: #fff;
+            padding: 6px 8px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .header-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            align-items: center;
+        }
+        .header button {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 20px;
+            padding: 6px 2px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            text-align: center;
+            width: 100%;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        .header button:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.03);
+        }
+        .header button:active {
+            transform: scale(0.92);
+        }
+        .header button.active {
+            background: #fff;
+            color: #1a365d;
+            border-color: #fff;
+        }
+        .header button.inactive {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.5);
+            border-color: rgba(255,255,255,0.1);
+        }
+        /* ===== GTTS BUTTON - ON (BLUE) ===== */
+        .header button.gtts-on {
+            background: #2b6cb0;
+            color: #fff;
+            border-color: #2b6cb0;
+        }
+        /* ===== GTTS BUTTON - OFF ===== */
+        .header button.gtts-off {
+            background: rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7);
+            border-color: rgba(255,255,255,0.15);
+        }
+        .header .nav-btn {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .header .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .toast.show { opacity: 1; }
+
+        /* ===== CARD ===== */
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 12px;
+            min-height: 350px;
+        }
+
+        /* ===== PROGRESS ===== */
+        .progress-wrap {
+            background: #e2e8f0;
+            border-radius: 12px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s;
+        }
+        .status {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .status .hidden { display: none; }
+
+        /* ===== QUIZ CONTENT ===== */
+        .question-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .qnum {
+            color: #2b6cb0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .tts-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .tts-btn {
+            background: rgba(43,108,176,0.1);
+            border: 1.5px solid #2b6cb0;
+            border-radius: 30px;
+            padding: 3px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #2b6cb0;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tts-btn:hover {
+            background: #2b6cb0;
+            color: #fff;
+        }
+        .tts-btn.listening {
+            background: #48bb78;
+            color: #fff;
+            border-color: #48bb78;
+            animation: pulse 1s infinite;
+        }
+        .tts-btn.stop-btn {
+            border-color: #e53e3e;
+            color: #e53e3e;
+        }
+        .tts-btn.stop-btn:hover {
+            background: #e53e3e;
+            color: #fff;
+        }
+        .tts-btn.loop-on {
+            background: #38a169;
+            color: #fff;
+            border-color: #38a169;
+        }
+        .tts-btn.loop-on:hover {
+            background: #2f855a;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .qtext {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a202c;
+            line-height: 1.9;
+        }
+        .qtext ruby { font-weight: 600; }
+        .qtext rt {
+            font-size: 11px;
+            font-weight: 400;
+            color: #2b6cb0;
+        }
+        .qkm {
+            font-size: 14px;
+            color: #4a5568;
+            background: #f7fafc;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin: 8px 0 14px 0;
+            border-left: 4px solid #2b6cb0;
+        }
+        .qkm.hidden { display: none; }
+
+        .choice {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            margin: 6px 0;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
+            background: #fff;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .choice:hover {
+            background: #ebf8ff;
+            border-color: #63b3ed;
+        }
+        .choice .km {
+            font-size: 13px;
+            color: #4a5568;
+            display: block;
+            margin-top: 2px;
+        }
+        .choice .km.hidden { display: none; }
+        .choice.correct {
+            background: #c6f6d5;
+            border-color: #48bb78;
+        }
+        .choice.wrong {
+            background: #fed7d7;
+            border-color: #f56565;
+        }
+
+        .feedback {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 12px;
+            font-size: 14px;
+            border-left: 4px solid #2b6cb0;
+        }
+        .feedback strong { color: #2b6cb0; }
+        .feedback .exp { color: #4a5568; margin-top: 6px; }
+        .feedback .km {
+            font-size: 13px;
+            color: #4a5568;
+            display: block;
+            margin-top: 4px;
+        }
+        .feedback .km.hidden { display: none; }
+
+        /* ===== RESULT ===== */
+        .result {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .result h2 { font-size: 28px; color: #1a365d; }
+        .result .score {
+            font-size: 48px;
+            font-weight: 800;
+            color: #2b6cb0;
+        }
+        .result .label { font-size: 16px; color: #4a5568; }
+        .result .pass {
+            color: #48bb78;
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 8px;
+        }
+        .result .fail {
+            color: #f56565;
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 8px;
+        }
+        .btn-reset {
+            background: #2b6cb0;
+            color: #fff;
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .btn-reset:hover { background: #1a365d; }
+        .btn-reset.green { background: #48bb78; }
+        .btn-reset.green:hover { background: #38a169; }
+
+        /* ===== HOME ===== */
+        .home-empty {
+            text-align: center;
+            padding: 40px 0;
+            color: #a0aec0;
+        }
+        .home-empty .icon {
+            font-size: 80px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .hidden { display: none; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 420px) {
+            .header button {
+                font-size: 10px;
+                padding: 4px 2px;
+                height: 28px;
+            }
+            .header .nav-btn { font-size: 12px; }
+            .tts-btn {
+                font-size: 10px;
+                padding: 2px 7px;
+                height: 24px;
+            }
+            .question-top { gap: 4px; }
+        }
+        @media (max-width: 360px) {
+            .header button {
+                font-size: 9px;
+                padding: 3px 1px;
+                height: 26px;
+            }
+            .header .nav-btn { font-size: 11px; }
+            .tts-btn {
+                font-size: 9px;
+                padding: 2px 5px;
+                height: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-grid">
+            <button class="nav-btn" id="prevBtn" onclick="prevQuestion()" disabled>◀</button>
+            <button id="toggleKh" class="active" onclick="toggleKh()">ខ្មែរ</button>
+            <button id="toggleFuri" class="active" onclick="toggleFuri()">ふり</button>
+            <button id="toggleGtts" class="gtts-off" onclick="toggleGtts()">GTTS</button>
+            <button class="nav-btn" id="nextBtn" onclick="nextQuestion()">▶</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">✅</div>
+
+    <!-- ===== PROGRESS ===== -->
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="status" id="statusBar">
+        <span id="qnum">📌 សំណួរ 1/10</span>
+        <span id="qscore">✅ 0</span>
+    </div>
+
+    <!-- ===== CARD ===== -->
+    <div class="card" id="quizCard">
+        <div id="contentArea"></div>
+    </div>
+    <div id="feedbackArea"></div>
+
+    <script>
+        // ============================================================
+        // 📝 QUESTIONS - SAFETY QUIZ 3 (50 Questions: Q0101 - Q0150)
+        // ============================================================
+
+        const TEST_QUESTIONS = [
+  // ===== 101 =====
+  {
+    id: "SQ0101",
+    q: '<ruby>賃金<rt>ちんぎん</rt></ruby>の<ruby>支払<rt>しはら</rt></ruby>い５<ruby>原則<rt>げんそく</rt></ruby>に<ruby>含<rt>ふく</rt></ruby>まれないものはどれか。',
+    km: 'តើមួយណាដែលមិនមែនជាគោលការណ៍ទាំង ៥ នៃការបើកប្រាក់ឈ្នួល?',
+    options: [
+      ['<ruby>通貨<rt>つうか</rt></ruby>で<ruby>支払<rt>しはら</rt></ruby>う', 'បើកជារូបិយវត្ថុ (សាច់ប្រាក់/ផ្ទេរចូលកុងធនាគារ)'],
+      ['<ruby>現物<rt>げんぶつ</rt></ruby>で<ruby>支払<rt>しはら</rt></ruby>う', 'បើកជាសម្ភារៈ/ទំនិញជំនួសប្រាក់'],
+      ['<ruby>直接<rt>ちょくせつ</rt></ruby><ruby>労働者<rt>ろうどうしゃ</rt></ruby>に<ruby>支払<rt>しはら</rt></ruby>う', 'បើកដោយផ្ទាល់ដៃដល់កម្មករ'],
+      ['<ruby>毎月<rt>まいしゅう</rt></ruby>１<ruby>回<rt>かい</rt></ruby><ruby>以上<rt>いじょう</rt></ruby><ruby>支払<rt>しはら</rt></ruby>う', 'បើកយ៉ាងហោចណាស់ ១ ដងក្នុងមួយខែ']
+    ],
+    ans: 1,
+    exp: '<ruby>賃金支払<rt>ちんぎんしはら</rt></ruby>いの５<ruby>原則<rt>げんそく</rt></ruby>は「<ruby>通貨<rt>つうか</rt></ruby>・<ruby>直接<rt>ちょくせつ</rt></ruby>・<ruby>全額<rt>ぜんがく</rt></ruby>・<ruby>毎月<rt>まいしゅう</rt></ruby>１<ruby>回<rt>かい</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>・<ruby>一定期日<rt>いっていきじつ</rt></ruby>」です。<ruby>現物支給<rt>げんぶつしきゅう</rt></ruby>は<ruby>含<rt>ふく</rt></ruby>まれません。（<ruby>労働基準法<rt>ろうどうきじゅんほう</rt></ruby>第24<ruby>条<rt>じょう</rt></ruby>）',
+    kmExp: 'គោលការណ៍ទាំង ៥ នៃការបើកប្រាក់ឈ្នួលរួមមាន ៖ បើកជារូបិយវត្ថុ, បើកផ្ទាល់ដៃ, បើកពេញចំនួន, បើកយ៉ាងហោចណាស់ ១ ដងក្នុងមួយខែ, និងបើកតាមកាលបរិច្ឆេទកំណត់ជាក់លាក់។ ការបើកជាទំនិញជំនួសប្រាក់គឺខុសច្បាប់។ (មាត្រា ២៤ នៃច្បាប់ស្តីពីស្តង់ដារការងារ)'
+  },
+  // ===== 102 =====
+  {
+    id: "SQ0102",
+    q: '<ruby>法定労働時間<rt>ほうていろうどうじかん</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាម៉ោងការងារកំណត់ដោយច្បាប់ (法定労働時間) ដែលត្រឹមត្រូវ?',
+    options: [
+      ['１<ruby>週間<rt>しゅうかん</rt></ruby>に48<ruby>時間<rt>じかん</rt></ruby>', '៤៨ ម៉ោងក្នុងមួយសប្តាហ៍'],
+      ['１<ruby>日<rt>にち</rt></ruby>に10<ruby>時間<rt>じかん</rt></ruby>', '១០ ម៉ោងក្នុងមួយថ្ងៃ'],
+      ['１<ruby>週間<rt>しゅうかん</rt></ruby>に40<ruby>時間<rt>じかん</rt></ruby>、１<ruby>日<rt>にち</rt></ruby>に8<ruby>時間<rt>じかん</rt></ruby>', '៤០ ម៉ោងក្នុងមួយសប្តាហ៍ និង ៨ ម៉ោងក្នុងមួយថ្ងៃ'],
+      ['１<ruby>週間<rt>しゅうかん</rt></ruby>に35<ruby>時間<rt>じかん</rt></ruby>', '៣៥ ម៉ោងក្នុងមួយសប្តាហ៍']
+    ],
+    ans: 2,
+    exp: '<ruby>法定労働時間<rt>ほうていろうどうじかん</rt></ruby>は１<ruby>週間<rt>しゅうかん</rt></ruby>40<ruby>時間<rt>じかん</rt></ruby>、１<ruby>日<rt>にち</rt></ruby>８<ruby>時間<rt>じかん</rt></ruby>です。（<ruby>労働基準法<rt>ろうどうきじゅんほう</rt></ruby>第32<ruby>条<rt>じょう</rt></ruby>）',
+    kmExp: 'ម៉ោងធ្វើការតាមច្បាប់កំណត់ជាគោលគឺ មិនឱ្យលើសពី ៨ ម៉ោងក្នុងមួយថ្ងៃ និងមិនឱ្យលើសពី ៤០ ម៉ោងក្នុងមួយសប្តាហ៍ឡើយ។ (មាត្រា ៣២ នៃច្បាប់ស្តីពីស្តង់ដារការងារ)'
+  },
+  // ===== 103 =====
+  {
+    id: "SQ0103",
+    q: '<ruby>休憩時間<rt>きゅうけいじかん</rt></ruby>について<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការកំណត់អំពីម៉ោងឈប់សម្រាកក្នុងច្បាប់ស្ដីពីស្ដង់ដារការងារ មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>労働時間<rt>ろうどうじかん</rt></ruby>が６<ruby>時間<rt>じかん</rt></ruby>を<ruby>超<rt>こ</rt></ruby>える<ruby>場合<rt>ばあい</rt></ruby>は45<ruby>分<rt>ぷん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>', 'បើម៉ោងធ្វើការលើសពី ៦ ម៉ោង ត្រូវឱ្យសម្រាកយ៉ាងតិច ៤៥ នាទី'],
+      ['<ruby>労働時間<rt>ろうどうじかん</rt></ruby>が８<ruby>時間<rt>じかん</rt></ruby>を<ruby>超<rt>こ</rt></ruby>える<ruby>場合<rt>ばあい</rt></ruby>は30<ruby>分<rt>ぷん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>', 'បើម៉ោងធ្វើការលើសពី ៨ ម៉ោង ត្រូវឱ្យសម្រាក ៣០ នាទី'],
+      ['<ruby>休憩時間<rt>きゅうけいじかん</rt></ruby>は<ruby>一斉<rt>いっせい</rt></ruby>に<ruby>与<rt>あた</rt></ruby>えなくてもよい', 'មិនបាច់ឱ្យសម្រាកក្នុងពេលតែមួយទេ'],
+      ['<ruby>休憩時間<rt>きゅうけいじかん</rt></ruby>は<ruby>自由<rt>じゆう</rt></ruby>に<ruby>利用<rt>りよう</rt></ruby>させなくてもよい', 'មិនបាច់ឱ្យប្រើប្រាស់ពេលសម្រាកដោយសេរីទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>労働時間<rt>ろうどうじかん</rt></ruby>が６<ruby>時間<rt>じかん</rt></ruby>を<ruby>超<rt>こ</rt></ruby>える<ruby>場合<rt>ばあい</rt></ruby>は45<ruby>分<rt>ぷん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>、８<ruby>時間<rt>じかん</rt></ruby>を<ruby>超<rt>こ</rt></ruby>える<ruby>場合<rt>ばあい</rt></ruby>は１<ruby>時間<rt>じかん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>の<ruby>休憩<rt>きゅうけい</rt></ruby>が<ruby>必要<rt>ひつよう</rt></ruby>です。（<ruby>労働基準法<rt>ろうどうきじゅんほう</rt></ruby>第34<ruby>条<rt>じょう</rt></ruby>）',
+    kmExp: 'បើម៉ោងធ្វើការលើសពី ៦ ម៉ោង ត្រូវផ្តល់ពេលសម្រាកយ៉ាងតិច ៤៥ នាទី ហើយបើលើសពី ៨ ម៉ោង ត្រូវផ្តល់ពេលសម្រាកយ៉ាងតិច ១ ម៉ោង (៦០ នាទី) នៅចន្លោះពេលធ្វើការ។ (មាត្រា ៣៤ នៃច្បាប់ស្តីពីស្តង់ដារការងារ)'
+  },
+  // ===== 104 =====
+  {
+    id: "SQ0104",
+    q: '<ruby>法定休日<rt>ほうていきゅうじつ</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាថ្ងៃឈប់សម្រាកតាមច្បាប់ (法定休日) ដែលត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>毎週<rt>まいしゅう</rt></ruby>少なくとも１<ruby>回<rt>かい</rt></ruby>の<ruby>休日<rt>きゅうじつ</rt></ruby>', 'យ៉ាងហោចណាស់ ១ ថ្ងៃក្នុងមួយសប្តាហ៍'],
+      ['<ruby>毎週<rt>まいしゅう</rt></ruby>少なくとも２<ruby>回<rt>かい</rt></ruby>の<ruby>休日<rt>きゅうじつ</rt></ruby>', 'យ៉ាងហោចណាស់ ២ ថ្ងៃក្នុងមួយសប្តាហ៍'],
+      ['<ruby>毎月<rt>まいつき</rt></ruby>少なくとも１<ruby>回<rt>かい</rt></ruby>の<ruby>休日<rt>きゅうじつ</rt></ruby>', 'យ៉ាងហោចណាស់ ១ ថ្ងៃក្នុងមួយខែ'],
+      ['<ruby>休日<rt>きゅうじつ</rt></ruby>は<ruby>与<rt>あた</rt></ruby>えなくてもよい', 'មិនចាំបាច់ផ្តល់ថ្ងៃឈប់សម្រាកទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>労働基準法<rt>ろうどうきじゅんほう</rt></ruby>第35<ruby>条<rt>じょう</rt></ruby>で、<ruby>使用者<rt>しようしゃ</rt></ruby>は<ruby>労働者<rt>ろうどうしゃ</rt></ruby>に<ruby>毎週<rt>まいしゅう</rt></ruby>少なくとも１<ruby>回<rt>かい</rt></ruby>の<ruby>休日<rt>きゅうじつ</rt></ruby>を<ruby>与<rt>あた</rt></ruby>えなければなりません。',
+    kmExp: 'តាមមាត្រា ៣៥ នៃច្បាប់ស្តីពីស្តង់ដារការងារ និយោជកត្រូវផ្តល់ថ្ងៃឈប់សម្រាកយ៉ាងហោចណាស់ ១ ថ្ងៃក្នុងមួយសប្តាហ៍។'
+  },
+  // ===== 105 =====
+  {
+    id: "SQ0105",
+    q: '<ruby>年次有給休暇<rt>ねんじゆうきゅうきゅうか</rt></ruby>を<ruby>取得<rt>しゅとく</rt></ruby>できる<ruby>条件<rt>じょうけん</rt></ruby>はどれか。',
+    km: 'តើលក្ខខណ្ឌដើម្បីទទួលបានច្បាប់ឈប់សម្រាកប្រចាំឆ្នាំមានប្រាក់ឈ្នួល (有給休暇) គឺអ្វី?',
+    options: [
+      ['３<ruby>か月<rt>げつ</rt></ruby><ruby>間<rt>かん</rt></ruby><ruby>継続<rt>けいぞく</rt></ruby><ruby>勤務<rt>きんむ</rt></ruby>し、<ruby>全労働日<rt>ぜんろうどうび</rt></ruby>の５<ruby>割<rt>わり</rt></ruby><ruby>以上<rt>いじょう</rt></ruby><ruby>勤務<rt>きんむ</rt></ruby>', 'ធ្វើការជាប់គ្នារយៈពេល ៣ ខែ និងមកធ្វើការ ៥០% ឡើងទៅ'],
+      ['６<ruby>か月<rt>げつ</rt></ruby><ruby>間<rt>かん</rt></ruby><ruby>継続<rt>けいぞく</rt></ruby><ruby>勤務<rt>きんむ</rt></ruby>し、<ruby>全労働日<rt>ぜんろうどうび</rt></ruby>の８<ruby>割<rt>わり</rt></ruby><ruby>以上<rt>いじょう</rt></ruby><ruby>勤務<rt>きんむ</rt></ruby>', 'ធ្វើការជាប់គ្នារយៈពេល ៦ ខែ និងមកធ្វើការ ៨០% ឡើងទៅនៃថ្ងៃធ្វើការសរុប'],
+      ['１<ruby>年間<rt>ねんかん</rt></ruby><ruby>継続<rt>けいぞく</rt></ruby><ruby>勤務<rt>きんむ</rt></ruby>し、<ruby>全労働日<rt>ぜんろうどうび</rt></ruby>の７<ruby>割<rt>わり</rt></ruby><ruby>以上<rt>いじょう</rt></ruby><ruby>勤務<rt>きんむ</rt></ruby>', 'ធ្វើការជាប់គ្នារយៈពេល ១ ឆ្នាំ និងមកធ្វើការ ៧០% ឡើងទៅ'],
+      ['<ruby>勤続年数<rt>きんぞくねんすう</rt></ruby>に<ruby>関係<rt>かんけい</rt></ruby>なく<ruby>取得<rt>しゅとく</rt></ruby>できる', 'អាចទទួលបានដោយមិនគិតពីរយៈពេលធ្វើការ']
+    ],
+    ans: 1,
+    exp: '<ruby>年次有給休暇<rt>ねんじゆうきゅうきゅうか</rt></ruby>は、６<ruby>か月間<rt>げつかん</rt></ruby><ruby>継続勤務<rt>けいぞくきんむ</rt></ruby>し、<ruby>全労働日<rt>ぜんろうどうび</rt></ruby>の８<ruby>割<rt>わり</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>を<ruby>勤務<rt>きんむ</rt></ruby>すると<ruby>取得<rt>しゅとく</rt></ruby>できます。（<ruby>労働基準法<rt>ろうどうきじゅんほう</rt></ruby>第39<ruby>条<rt>じょう</rt></ruby>）',
+    kmExp: 'កម្មករដែលធ្វើការជាប់គ្នារយៈពេល ៦ ខែដំបូង និងមានវត្តមានមកធ្វើការចាប់ពី ៨០% ឡើងទៅនៃថ្ងៃធ្វើការសរុប នឹងទទួលបានច្បាប់សម្រាកមានប្រាក់ឈ្នួល ១០ ថ្ងៃ។ (មាត្រា ៣៩ នៃច្បាប់ស្តីពីស្តង់ដារការងារ)'
+  },
+  // ===== 106 =====
+  {
+    id: "SQ0106",
+    q: '<ruby>農業<rt>のうぎょう</rt></ruby>における<ruby>労働時間<rt>ろうどうじかん</rt></ruby>の<ruby>適用除外<rt>てきようじょがい</rt></ruby>について<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការលើកលែងម៉ោងធ្វើការក្នុងវិស័យកសិកម្មមួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>農業<rt>のうぎょう</rt></ruby>には<ruby>法定労働時間<rt>ほうていろうどうじかん</rt></ruby>は<ruby>適用<rt>てきよう</rt></ruby>されない', 'ម៉ោងធ្វើការតាមច្បាប់មិនអនុវត្តចំពោះវិស័យកសិកម្មទេ'],
+      ['<ruby>農業<rt>のうぎょう</rt></ruby>にも<ruby>法定労働時間<rt>ほうていろうどうじかん</rt></ruby>は<ruby>適用<rt>てきよう</rt></ruby>される', 'ម៉ោងធ្វើការតាមច្បាប់ក៏អនុវត្តចំពោះវិស័យកសិកម្មដែរ'],
+      ['<ruby>農家<rt>のうか</rt></ruby>が<ruby>自由<rt>じゆう</rt></ruby>に<ruby>決<rt>き</rt></ruby>める', 'កសិករអាចសម្រេចចិត្តដោយសេរី'],
+      ['<ruby>労働時間<rt>ろうどうじかん</rt></ruby>の<ruby>制限<rt>せいげん</rt></ruby>はない', 'មិនមានកំណត់ម៉ោងធ្វើការសោះឡើយ']
+    ],
+    ans: 0,
+    exp: '<ruby>農業<rt>のうぎょう</rt></ruby>は、<ruby>労働基準法<rt>ろうどうきじゅんほう</rt></ruby>第41<ruby>条<rt>じょう</rt></ruby>により、<ruby>労働時間<rt>ろうどうじかん</rt></ruby>・<ruby>休憩<rt>きゅうけい</rt></ruby>・<ruby>休日<rt>きゅうじつ</rt></ruby>が<ruby>適用除外<rt>てきようじょがい</rt></ruby>となっています。',
+    kmExp: 'វិស័យកសិកម្មត្រូវបានលើកលែងពីការកំណត់ម៉ោងធ្វើការ ពេលសម្រាក និងថ្ងៃឈប់សម្រាក តាមមាត្រា ៤១ នៃច្បាប់ស្តីពីស្តង់ដារការងារ។'
+  },
+  // ===== 107 =====
+  {
+    id: "SQ0107",
+    q: '<ruby>農薬<rt>のうやく</rt></ruby>の<ruby>使用<rt>しよう</rt></ruby>に<ruby>伴<rt>ともな</rt></ruby>う<ruby>事故<rt>じこ</rt></ruby>の<ruby>原因<rt>げんいん</rt></ruby>として<ruby>最も<rt>もっとも</rt></ruby><ruby>多<rt>おお</rt></ruby>いのはどれか。',
+    km: 'តើមូលហេតុចម្បងដែលបង្កឱ្យកើតមានគ្រោះថ្នាក់ច្រើនជាងគេក្នុងការប្រើប្រាស់ថ្នាំកសិកម្មគឺអ្វី?',
+    options: [
+      ['ドリフト<ruby>防止対策<rt>ぼうしたいさく</rt></ruby>の<ruby>未実施<rt>みじっし</rt></ruby>', 'ការមិនបានអនុវត្តវិធានការទប់ស្កាត់ការសាយភាយ/ហើរខ្ចាយនៃថ្នាំ (Drift)'],
+      ['<ruby>保護具<rt>ほごぐ</rt></ruby>の<ruby>不十分<rt>ふじゅうぶん</rt></ruby>な<ruby>装着<rt>そうちゃく</rt></ruby>', 'ការពាក់ឧបករណ៍ការពារខ្លួនមិនបានគ្រប់គ្រាន់'],
+      ['<ruby>強風<rt>きょうふう</rt></ruby><ruby>中<rt>ちゅう</rt></ruby>の<ruby>散布<rt>さんぷ</rt></ruby>', 'ការបាញ់ថ្នាំក្នុងពេលមានខ្យល់បក់ខ្លាំង'],
+      ['<ruby>容器<rt>ようき</rt></ruby>の<ruby>転落<rt>てんらく</rt></ruby>・<ruby>転倒<rt>てんとう</rt></ruby>', 'ការធ្លាក់ ឬដួលរលំធុងថ្នាំ']
+    ],
+    ans: 0,
+    exp: '<ruby>農薬事故<rt>のうやくじこ</rt></ruby>の<ruby>最も<rt>もっとも</rt></ruby><ruby>多<rt>おお</rt></ruby>い<ruby>原因<rt>げんいん</rt></ruby>はドリフト<ruby>防止対策<rt>ぼうしたいさく</rt></ruby>の<ruby>未実施<rt>みじっし</rt></ruby>です。（<ruby>農林水産省<rt>のうりんすいさんしょう</rt></ruby>データ 2017-2021）',
+    kmExp: 'មូលហេតុចម្បងនៃការកើតគ្រោះថ្នាក់ថ្នាំកសិកម្ម គឺការធ្វេសប្រហែសមិនបានការពារការហើរខ្ចាយសាយភាយនៃផ្សែងថ្នាំ (Drift) ទៅលើមនុស្ស ឬដំណាំជិតខាង។ (ទិន្នន័យក្រសួងកសិកម្ម)'
+  },
+  // ===== 108 =====
+  {
+    id: "SQ0108",
+    q: '<ruby>農薬<rt>のうやく</rt></ruby>の<ruby>毒性<rt>どくせい</rt></ruby>に<ruby>基<rt>もと</rt></ruby>づく<ruby>区分<rt>くぶん</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាការចាត់ថ្នាក់កម្រិតជាតិពុលនៃថ្នាំកសិកម្មតាមច្បាប់ជប៉ុន?',
+    options: [
+      ['<ruby>毒物<rt>どくぶつ</rt></ruby>・<ruby>劇物<rt>げきぶつ</rt></ruby>・<ruby>普通物<rt>ふつうぶつ</rt></ruby>', 'សារធាតុពុល, សារធាតុពុលខ្លាំង, និងសារធាតុធម្មតា'],
+      ['<ruby>毒物<rt>どくぶつ</rt></ruby>・<ruby>劇物<rt>げきぶつ</rt></ruby>', 'សារធាតុពុល និងសារធាតុពុលខ្លាំង'],
+      ['<ruby>劇物<rt>げきぶつ</rt></ruby>・<ruby>普通物<rt>ふつうぶつ</rt></ruby>', 'សារធាតុពុលខ្លាំង និងសារធាតុធម្មតា'],
+      ['<ruby>毒物<rt>どくぶつ</rt></ruby>・<ruby>無害物<rt>むがいぶつ</rt></ruby>', 'សារធាតុពុល និងសារធាតុគ្មានគ្រោះថ្នាក់']
+    ],
+    ans: 0,
+    exp: '<ruby>農薬<rt>のうやく</rt></ruby>はその<ruby>毒性<rt>どくせい</rt></ruby>により、<ruby>毒物<rt>どくぶつ</rt></ruby>・<ruby>劇物<rt>げきぶつ</rt></ruby>・<ruby>普通物<rt>ふつうぶつ</rt></ruby>の３<ruby>種類<rt>しゅるい</rt></ruby>に<ruby>分類<rt>ぶんるい</rt></ruby>されます。',
+    kmExp: 'ថ្នាំសម្លាប់សត្វល្អិតត្រូវបានចាត់ថ្នាក់ជា ៣ ប្រភេទតាមជាតិពុលគឺ ៖ 毒物 (ពុលខ្លាំង), 劇物 (ពុលមធ្យម), និង 普通物 (ពុលកម្រិតទាប)។'
+  },
+  // ===== 109 =====
+  {
+    id: "SQ0109",
+    q: '<ruby>農薬<rt>のうやく</rt></ruby>のラベルに<ruby>表示<rt>ひょうじ</rt></ruby>される<ruby>注意喚起マーク<rt>ちゅういかんきまーく</rt></ruby>の<ruby>目的<rt>もくてき</rt></ruby>はどれか。',
+    km: 'តើគោលបំណងនៃសញ្ញាព្រមាន (注意喚起マーク) នៅលើស្លាកថ្នាំសម្លាប់សត្វល្អិតគឺអ្វី?',
+    options: [
+      ['<ruby>使用者<rt>しようしゃ</rt></ruby>に<ruby>注意<rt>ちゅうい</rt></ruby>を<ruby>促<rt>うなが</rt></ruby>すため', 'ដើម្បីដាស់តឿនអ្នកប្រើប្រាស់ឱ្យមានការប្រុងប្រយ័ត្នខ្ពស់'],
+      ['<ruby>製品<rt>せいひん</rt></ruby>を<ruby>宣伝<rt>せんでん</rt></ruby>するため', 'ដើម្បីផ្សាយពាណិជ្ជកម្មផលិតផល'],
+      ['<ruby>デザイン<rt>でざいん</rt></ruby>のため', 'ដើម្បីតុបតែងលម្អ'],
+      ['<ruby>製造者<rt>せいぞうしゃ</rt></ruby>を<ruby>表示<rt>ひょうじ</rt></ruby>するため', 'ដើម្បីបង្ហាញអ្នកផលិត']
+    ],
+    ans: 0,
+    exp: '<ruby>注意喚起マーク<rt>ちゅういかんきまーく</rt></ruby>は<ruby>使用者<rt>しようしゃ</rt></ruby>に<ruby>注意<rt>ちゅうい</rt></ruby>を<ruby>促<rt>うなが</rt></ruby>すためのものです。（JCPA 農業工業会）',
+    kmExp: 'សញ្ញាព្រមានគឺដើម្បីដាស់តឿនអ្នកប្រើប្រាស់ឱ្យមានការប្រុងប្រយ័ត្នខ្ពស់ចំពោះគ្រោះថ្នាក់។ (JCPA)'
+  },
+  // ===== 110 =====
+  {
+    id: "SQ0110",
+    q: '<ruby>農薬<rt>のうやく</rt></ruby>の<ruby>散布<rt>さんぷ</rt></ruby>において<ruby>正<rt>ただ</rt></ruby>しい<ruby>方向<rt>ほうこう</rt></ruby>はどれか。',
+    km: 'តើទិសដៅបាញ់ថ្នាំសម្លាប់សត្វល្អិតមួយណាដែលត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>風下<rt>かぜしも</rt></ruby>から<ruby>風上<rt>かぜかみ</rt></ruby>に<ruby>向<rt>む</rt></ruby>かって', 'បាញ់ពីទិសខ្យល់បក់ទៅ (ខ្យល់ក្រោម) ដើរថយក្រោយមករកទិសខ្យល់បក់មក (ខ្យល់លើ)'],
+      ['<ruby>風上<rt>かぜかみ</rt></ruby>から<ruby>風下<rt>かぜしも</rt></ruby>に<ruby>向<rt>む</rt></ruby>かって', 'បាញ់ពីទិសខ្យល់បក់មក ទៅទិសខ្យល់បក់ទៅ'],
+      ['<ruby>風<rt>かぜ</rt></ruby>の<ruby>方向<rt>ほうこう</rt></ruby>に<ruby>関係<rt>かんけい</rt></ruby>なく', 'ដោយមិនគិតពីទិសដៅខ្យល់'],
+      ['<ruby>四方<rt>しほう</rt></ruby>から<ruby>同時<rt>どうじ</rt></ruby>に', 'ពីគ្រប់ទិសទីក្នុងពេលតែមួយ']
+    ],
+    ans: 0,
+    exp: '<ruby>農薬<rt>のうやく</rt></ruby>は<ruby>風下<rt>かぜしも</rt></ruby><ruby>側<rt>がわ</rt></ruby>から<ruby>風上<rt>かぜかみ</rt></ruby><ruby>側<rt>がわ</rt></ruby>に<ruby>向<rt>む</rt></ruby>かって<ruby>散布<rt>さんぷ</rt></ruby>します。',
+    kmExp: 'ដើម្បីការពារកុំឱ្យផ្សែងថ្នាំហើរមកត្រូវខ្លួនអ្នកបាញ់ ត្រូវចាប់ផ្ដើមបាញ់ពីទិសខ្យល់បក់ចេញ (風下) ហើយដើរថយក្រោយមករកទិសខ្យល់បក់ចូល (風上)។'
+  },
+  // ===== 111 =====
+  {
+    id: "SQ0111",
+    q: '<ruby>農薬<rt>のうやく</rt></ruby>の<ruby>使用<rt>しよう</rt></ruby><ruby>記録<rt>きろく</rt></ruby>を<ruby>保存<rt>ほぞん</rt></ruby>する<ruby>期間<rt>きかん</rt></ruby>はどれか。',
+    km: 'តើច្បាប់តម្រូវឱ្យរក្សាទុកកំណត់ត្រាការប្រើប្រាស់ថ្នាំកសិកម្មរយៈពេលប៉ុន្មានឆ្នាំ?',
+    options: [
+      ['1<ruby>年間<rt>ねんかん</rt></ruby>', '១ ឆ្នាំ'],
+      ['2<ruby>年間<rt>ねんかん</rt></ruby>', '២ ឆ្នាំ'],
+      ['3<ruby>年間<rt>ねんかん</rt></ruby>', '៣ ឆ្នាំ'],
+      ['5<ruby>年間<rt>ねんかん</rt></ruby>', '៥ ឆ្នាំ']
+    ],
+    ans: 1,
+    exp: '<ruby>農薬使用記録<rt>のうやくしようきろく</rt></ruby>は２<ruby>年間<rt>ねんかん</rt></ruby><ruby>保存<rt>ほぞん</rt></ruby>する<ruby>必要<rt>ひつよう</rt></ruby>があります。',
+    kmExp: 'កំណត់ត្រាការប្រើប្រាស់ថ្នាំកសិកម្ម ត្រូវរក្សាទុកយ៉ាងហោចណាស់ ២ ឆ្នាំ ដើម្បីងាយស្រួលត្រួតពិនិត្យសុវត្ថិភាពចំណីអាហារ។'
+  },
+  // ===== 112 =====
+  {
+    id: "SQ0112",
+    q: '<ruby>農薬<rt>のうやく</rt></ruby>の<ruby>保管<rt>ほかん</rt></ruby>において<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការរក្សាទុកដាក់ថ្នាំកសិកម្មមួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>劇物<rt>げきぶつ</rt></ruby>と<ruby>普通物<rt>ふつうぶつ</rt></ruby>を<ruby>分<rt>わ</rt></ruby>けて<ruby>保管<rt>ほかん</rt></ruby>する', 'បែងចែកដាក់ដាច់ដោយឡែករវាងថ្នាំពុលខ្លាំង និងថ្នាំធម្មតា'],
+      ['<ruby>劇物<rt>げきぶつ</rt></ruby>と<ruby>普通物<rt>ふつうぶつ</rt></ruby>を<ruby>一緒<rt>いっしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>する', 'ទុកចោលច្របល់ចូលគ្នាជាមួយថ្នាំធម្មតា'],
+      ['<ruby>直射日光<rt>ちょくしゃにっこう</rt></ruby>の<ruby>当<rt>あ</rt></ruby>たる<ruby>場所<rt>ばしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>する', 'ទុកកន្លែងត្រូវពន្លឺថ្ងៃចាំងផ្ទាល់'],
+      ['<ruby>食品<rt>しょくひん</rt></ruby>と<ruby>一緒<rt>いっしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>する', 'ទុកដាក់កន្លែងជាមួយម្ហូបអាហារ']
+    ],
+    ans: 0,
+    exp: '<ruby>劇物<rt>げきぶつ</rt></ruby>・<ruby>毒物<rt>どくぶつ</rt></ruby>と<ruby>普通物<rt>ふつうぶつ</rt></ruby>は<ruby>分<rt>わ</rt></ruby>けて<ruby>保管<rt>ほかん</rt></ruby>しなければなりません。',
+    kmExp: 'ថ្នាំពុលខ្លាំង និងថ្នាំពុល (毒物・劇物) ត្រូវរៀបចំដាក់ទុកដាច់ដោយឡែកពីថ្នាំធម្មតា (普通物) ក្នុងទូមានសោចាក់សុវត្ថិភាព។'
+  },
+  // ===== 113 =====
+  {
+    id: "SQ0113",
+    q: '<ruby>肥料<rt>ひりょう</rt></ruby>の<ruby>種類<rt>しゅるい</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការបែងចែកប្រភេទជីតាមច្បាប់គ្រប់គ្រងជី មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>特殊肥料<rt>とくしゅひりょう</rt></ruby>と<ruby>普通肥料<rt>ふつうひりょう</rt></ruby>', 'ជីពិសេស (特殊肥料) និងជីធម្មតា (普通肥料)'],
+      ['<ruby>有機肥料<rt>ゆうきひりょう</rt></ruby>と<ruby>化学肥料<rt>かがくひりょう</rt></ruby>', 'ជីសរីរាង្គ និងជីគីមី'],
+      ['<ruby>液体肥料<rt>えきたいひりょう</rt></ruby>と<ruby>固体肥料<rt>こたいひりょう</rt></ruby>', 'ជីរាវ និងជីរឹង'],
+      ['<ruby>天然肥料<rt>てんねんひりょう</rt></ruby>と<ruby>人工肥料<rt>じんこうひりょう</rt></ruby>', 'ជីធម្មជាតិ និងជីសិប្បនិម្មិត']
+    ],
+    ans: 0,
+    exp: '<ruby>肥料<rt>ひりょう</rt></ruby>には「<ruby>特殊肥料<rt>とくしゅひりょう</rt></ruby>」と「<ruby>普通肥料<rt>ふつうひりょう</rt></ruby>」の２<ruby>種類<rt>しゅるい</rt></ruby>があります。（<ruby>肥料取締法<rt>ひりょうとりしまりほう</rt></ruby>）',
+    kmExp: 'តាមច្បាប់គ្រប់គ្រងជីរបស់ជប៉ុន ជីត្រូវបានបែងចែកជា ២ ប្រភេទធំៗគឺ ៖ ជីពិសេស (特殊肥料) និងជីធម្មតា (普通肥料)។'
+  },
+  // ===== 114 =====
+  {
+    id: "SQ0114",
+    q: '<ruby>普通肥料<rt>ふつうひりょう</rt></ruby>に<ruby>必<rt>かなら</rt></ruby>ず<ruby>添付<rt>てんぷ</rt></ruby>されているものはどれか。',
+    km: 'តើអ្វីដែលត្រូវតែមានបិទភ្ជាប់មកជាមួយជានិច្ចសម្រាប់ជីធម្មតា (普通肥料)?',
+    options: [
+      ['<ruby>保証票<rt>ほしょうひょう</rt></ruby>', 'ប័ណ្ណធានាគុណភាពជី (保証票)'],
+      ['<ruby>取扱説明書<rt>とりあつかいせつめいしょ</rt></ruby>', 'សៀវភៅណែនាំប្រើប្រាស់'],
+      ['<ruby>価格表<rt>かかくひょう</rt></ruby>', 'តារាងតម្លៃលក់'],
+      ['<ruby>広告<rt>こうこく</rt></ruby>', 'ខិត្តប័ណ្ណផ្សាយពាណិជ្ជកម្ម']
+    ],
+    ans: 0,
+    exp: '<ruby>普通肥料<rt>ふつうひりょう</rt></ruby>には「<ruby>生産業者保証票<rt>せいさんぎょうしゃほしょうひょう</rt></ruby>」または「<ruby>輸入業者保証票<rt>ゆにゅうぎょうしゃほしょうひょう</rt></ruby>」が<ruby>添付<rt>てんぷ</rt></ruby>されています。',
+    kmExp: 'ជីធម្មតា (普通肥料) គ្រប់ការុងទាំងអស់ ត្រូវតែមានបិទប័ណ្ណធានាគុណភាព (保証票) បង្ហាញពីសមាសធាតុនីមួយៗស្របតាមច្បាប់។'
+  },
+  // ===== 115 =====
+  {
+    id: "SQ0115",
+    q: '<ruby>肥料<rt>ひりょう</rt></ruby>の<ruby>保管<rt>ほかん</rt></ruby>について<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការរក្សាទុកដាក់ជីកសិកម្មមួយណាដែលត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>雨<rt>あめ</rt></ruby>の<ruby>当<rt>あ</rt></ruby>たらない<ruby>場所<rt>ばしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>する', 'រក្សាទុកក្នុងកន្លែងស្ងួតមិនត្រូវទឹកភ្លៀង'],
+      ['<ruby>高温<rt>こうおん</rt></ruby>・<ruby>多湿<rt>たしつ</rt></ruby>な<ruby>場所<rt>ばしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>する', 'រក្សាទុកក្នុងកន្លែងក្ដៅខ្លាំង និងសើមខ្លាំង'],
+      ['<ruby>直射日光<rt>ちょくしゃにっこう</rt></ruby>の<ruby>当<rt>あ</rt></ruby>たる<ruby>場所<rt>ばしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>する', 'ទុកកន្លែងត្រូវពន្លឺថ្ងៃចាំងផ្ទាល់'],
+      ['<ruby>袋<rt>ふくろ</rt></ruby>の<ruby>口<rt>くち</rt></ruby>を<ruby>開<rt>あ</rt></ruby>け<ruby>放<rt>はな</rt></ruby>しにして<ruby>保管<rt>ほかん</rt></ruby>する', 'បើកមាត់ការុងចោលចំហរ']
+    ],
+    ans: 0,
+    exp: '<ruby>肥料<rt>ひりょう</rt></ruby>は<ruby>高温<rt>こうおん</rt></ruby>・<ruby>多湿<rt>たしつ</rt></ruby>な<ruby>場所<rt>ばしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>してはいけません。また、<ruby>雨<rt>あめ</rt></ruby>の<ruby>当<rt>あ</rt></ruby>たらない<ruby>場所<rt>ばしょ</rt></ruby>に<ruby>保管<rt>ほかん</rt></ruby>します。',
+    kmExp: 'ជីកសិកម្មងាយនឹងរលាយ ឬខូចគុណភាពពេលត្រូវសំណើម ដូច្នេះត្រូវរក្សាទុកក្នុងទីងងឹត ស្ងួត មិនត្រូវទឹកភ្លៀង និងបិទមាត់ការុងឱ្យជិត។'
+  },
+  // ===== 116 =====
+  {
+    id: "SQ0116",
+    q: '<ruby>特殊肥料<rt>とくしゅひりょう</rt></ruby>に<ruby>該当<rt>がいとう</rt></ruby>するものはどれか。',
+    km: 'តើមួយណាដែលត្រូវជា «ជីពិសេស» (特殊肥料)?',
+    options: [
+      ['<ruby>堆肥<rt>たいひ</rt></ruby>', 'ជីកំប៉ុស (堆肥)'],
+      ['<ruby>化成肥料<rt>かせいひりょう</rt></ruby>', 'ជីគីមីផ្សំ (化成肥料)'],
+      ['<ruby>硫酸アンモニア<rt>りゅうさんあんもにあ</rt></ruby>', 'អាម៉ូញ៉ូមស៊ុលហ្វាត'],
+      ['<ruby>塩化加里<rt>えんかかり</rt></ruby>', 'ប៉ូតាស្យូមក្លរួ']
+    ],
+    ans: 0,
+    exp: '<ruby>堆肥<rt>たいひ</rt></ruby>は<ruby>特殊肥料<rt>とくしゅひりょう</rt></ruby>に<ruby>該当<rt>がいとう</rt></ruby>します。（<ruby>魚かす<rt>さかなかす</rt></ruby>、<ruby>米ぬか<rt>こめぬか</rt></ruby>なども<ruby>特殊肥料<rt>とくしゅひりょう</rt></ruby>です）',
+    kmExp: 'ជីកំប៉ុស (堆肥) ត្រូវបានចាត់ទុកជាជីពិសេស (特殊肥料)។ ចំណែកជីគីមីផ្សេងទៀតគឺជាជីធម្មតា (普通肥料)។'
+  },
+  // ===== 117 =====
+  {
+    id: "SQ0117",
+    q: '<ruby>廃棄物<rt>はいきぶつ</rt></ruby>の<ruby>分類<rt>ぶんるい</rt></ruby>について<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការបែងចែកប្រភេទកាកសំណល់/សំរាម មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>産業廃棄物<rt>さんぎょうはいきぶつ</rt></ruby>と<ruby>一般廃棄物<rt>いっぱんはいきぶつ</rt></ruby>', 'កាកសំណល់ឧស្សាហកម្ម និងកាកសំណល់ទូទៅ'],
+      ['<ruby>有機廃棄物<rt>ゆうきはいきぶつ</rt></ruby>と<ruby>無機廃棄物<rt>むきはいきぶつ</rt></ruby>', 'កាកសំណល់សរីរាង្គ និងអសរីរាង្គ'],
+      ['<ruby>液体廃棄物<rt>えきたいはいきぶつ</rt></ruby>と<ruby>固体廃棄物<rt>こたいはいきぶつ</rt></ruby>', 'កាកសំណល់រាវ និងរឹង'],
+      ['<ruby>危険廃棄物<rt>きけんはいきぶつ</rt></ruby>と<ruby>安全廃棄物<rt>あんぜんはいきぶつ</rt></ruby>', 'កាកសំណល់គ្រោះថ្នាក់ និងសុវត្ថិភាព']
+    ],
+    ans: 0,
+    exp: '<ruby>廃棄物<rt>はいきぶつ</rt></ruby>は<ruby>産業廃棄物<rt>さんぎょうはいきぶつ</rt></ruby>と<ruby>一般廃棄物<rt>いっぱんはいきぶつ</rt></ruby>に<ruby>分類<rt>ぶんるい</rt></ruby>されます。',
+    kmExp: 'តាមច្បាប់ជប៉ុន កាកសំណល់ត្រូវបានបែងចែកជា ២ ប្រភេទធំៗគឺ ៖ កាកសំណល់ឧស្សាហកម្ម (産業廃棄物) និងកាកសំណល់ទូទៅ (一般廃棄物)។'
+  },
+  // ===== 118 =====
+  {
+    id: "SQ0118",
+    q: '<ruby>産業廃棄物<rt>さんぎょうはいきぶつ</rt></ruby>に<ruby>該当<rt>がいとう</rt></ruby>するものはどれか。',
+    km: 'តើមួយណាដែលត្រូវបានចាត់ទុកជា «កាកសំណល់ឧស្សាហកម្ម» (産業廃棄物)?',
+    options: [
+      ['<ruby>家庭ゴミ<rt>かていごみ</rt></ruby>', 'សំរាមតាមផ្ទះប្រចាំថ្ងៃ'],
+      ['<ruby>農業用<rt>のうぎょうよう</rt></ruby>ビニール', 'ផ្លាស្ទិកកសិកម្ម (កៅស៊ូគ្របដី/ទុយោប្លាស្ទិក)'],
+      ['<ruby>生ゴミ<rt>なまごみ</rt></ruby>', 'សំណល់ម្ហូបអាហារ'],
+      ['<ruby>紙くず<rt>かみくず</rt></ruby>', 'កម្ទេចក្រដាស அலுவலக']
+    ],
+    ans: 1,
+    exp: '<ruby>農業用<rt>のうぎょうよう</rt></ruby>ビニールは<ruby>産業廃棄物<rt>さんぎょうはいきぶつ</rt></ruby>に<ruby>該当<rt>がいとう</rt></ruby>します。',
+    kmExp: 'ផ្លាស្ទិក ឬកៅស៊ូប្រើប្រាស់ក្នុងវិស័យកសិកម្ម (農業用ビニール) គឺត្រូវចាត់ទុកជាកាកសំណល់ឧស្សាហកម្មដែលត្រូវបង់ប្រាក់កម្ទេចចោលតាមច្បាប់។'
+  },
+  // ===== 119 =====
+  {
+    id: "SQ0119",
+    q: '<ruby>事業系一般廃棄物<rt>じぎょうけいいっぱんはいきぶつ</rt></ruby>に<ruby>該当<rt>がいとう</rt></ruby>するものはどれか。',
+    km: 'តើមួយណាដែលត្រូវជា «កាកសំណល់ទូទៅកើតចេញពីអាជីវកម្ម» (事業系一般廃棄物)?',
+    options: [
+      ['<ruby>廃油<rt>はいゆ</rt></ruby>', 'ប្រេងម៉ាស៊ីនចាស់ (កាកសំណល់ឧស្សាហកម្ម)'],
+      ['<ruby>金属くず<rt>きんぞくくず</rt></ruby>', 'កម្ទេចដែក (កាកសំណល់ឧស្សាហកម្ម)'],
+      ['<ruby>剪定枝<rt>せんていえだ</rt></ruby>', 'មែកឈើកាត់ pruning (កាកសំណល់ទូទៅពីអាជីវកម្ម)'],
+      ['<ruby>廃プラスチック類<rt>はいぷらすちっくるい</rt></ruby>', 'សំណល់ប្លាស្ទិក (កាកសំណល់ឧស្សាហកម្ម)']
+    ],
+    ans: 2,
+    exp: '<ruby>剪定枝<rt>せんていえだ</rt></ruby>（<ruby>木<rt>き</rt></ruby>くず）は<ruby>事業系一般廃棄物<rt>じぎょうけいいっぱんはいきぶつ</rt></ruby>に<ruby>該当<rt>がいとう</rt></ruby>します。',
+    kmExp: 'មែកឈើ ឬដើមឈើដែលកាត់ចេញពីការថែទាំចម្ការ (剪定枝/木くず) ត្រូវបានចាត់ទុកជាកាកសំណល់ទូទៅប្រភេទអាជីវកម្ម (事業系一般廃棄物)។'
+  },
+  // ===== 120 =====
+  {
+    id: "SQ0120",
+    q: 'マニフェスト（<ruby>産業廃棄物管理票<rt>さんぎょうはいきぶつかんりひょう</rt></ruby>）の<ruby>保管<rt>ほかん</rt></ruby><ruby>期間<rt>きかん</rt></ruby>はどれか。',
+    km: 'តើច្បាប់តម្រូវឱ្យរក្សាទុកប័ណ្ណតាមដានសំណល់ឧស្សាហកម្ម (Manifest) រយៈពេលប៉ុន្មានឆ្នាំ?',
+    options: [
+      ['1<ruby>年間<rt>ねんかん</rt></ruby>', '១ ឆ្នាំ'],
+      ['3<ruby>年間<rt>ねんかん</rt></ruby>', '៣ ឆ្នាំ'],
+      ['5<ruby>年間<rt>ねんかん</rt></ruby>', '៥ ឆ្នាំ'],
+      ['10<ruby>年間<rt>ねんかん</rt></ruby>', '១០ ឆ្នាំ']
+    ],
+    ans: 2,
+    exp: 'マニフェストは<ruby>法令<rt>ほうれい</rt></ruby>で５<ruby>年間<rt>ねんかん</rt></ruby><ruby>保管<rt>ほかん</rt></ruby>することが<ruby>義務<rt>ぎむ</rt></ruby>づけられています。',
+    kmExp: 'ប័ណ្ណតាមដានការចាត់ចែងកាកសំណល់ឧស្សាហកម្ម (Manifest) ត្រូវរក្សាទុកជាកាតព្វកិច្ចរយៈពេល ៥ ឆ្នាំ។'
+  },
+  // ===== 121 =====
+  {
+    id: "SQ0121",
+    q: '<ruby>産業廃棄物<rt>さんぎょうはいきぶつ</rt></ruby>の<ruby>保管<rt>ほかん</rt></ruby><ruby>場所<rt>ばしょ</rt></ruby>に<ruby>設置<rt>せっち</rt></ruby>するものはどれか。',
+    km: 'តើអ្វីដែលត្រូវបិទ ឬដំឡើងនៅកន្លែងស្តុកទុកកាកសំណល់ឧស្សាហកម្ម?',
+    options: [
+      ['<ruby>掲示板<rt>けいじばん</rt></ruby>', 'ផ្លាកសញ្ញាបង្ហាញព័ត៌មានកាកសំណល់ (掲示板)'],
+      ['<ruby>カメラ<rt>かめら</rt></ruby>', 'កាមេរ៉ាសុវត្ថិភាព'],
+      ['<ruby>ベンチ<rt>べんち</rt></ruby>', 'កៅអីអង្គុយលេង'],
+      ['<ruby>植木<rt>うえき</rt></ruby>', 'ដើមឈើលម្អ']
+    ],
+    ans: 0,
+    exp: '<ruby>産業廃棄物<rt>さんぎょうはいきぶつ</rt></ruby>の<ruby>保管場所<rt>ほかんばしょ</rt></ruby>には<ruby>掲示板<rt>けいじばん</rt></ruby>を<ruby>設置<rt>せっち</rt></ruby>しなければなりません。',
+    kmExp: 'កន្លែងស្តុកទុកកាកសំណល់ឧស្សាហកម្ម ត្រូវតែមានដាក់ផ្លាកសញ្ញាបង្ហាញព័ត៌មាន (掲示板) អំពីប្រភេទកាកសំណល់ និងឈ្មោះអ្នកគ្រប់គ្រងឱ្យបានច្បាស់លាស់។'
+  },
+  // ===== 122 =====
+  {
+    id: "SQ0122",
+    q: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>原因<rt>げんいん</rt></ruby>として<ruby>誤<rt>あやま</rt></ruby>っているものはどれか。',
+    km: 'តើមួយណាដែលមិនមែនជាកត្តាបង្កឱ្យកើតជំងឺស្ទះខ្យល់ក្ដៅ/ខ្យល់គរ (熱中症)?',
+    options: [
+      ['<ruby>気温<rt>きおん</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い', 'សីតុណ្ហភាពអាកាសធាតុក្ដៅខ្លាំង'],
+      ['<ruby>湿度<rt>しつど</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い', 'សំណើមបរិយាកាសខ្ពស់ស្អុះស្អាប់'],
+      ['<ruby>風<rt>かぜ</rt></ruby>が<ruby>強<rt>つよ</rt></ruby>い', 'មានខ្យល់បក់ខ្លាំង (មិនមែនជាមូលហេតុបង្កទេ ផ្ទុយទៅវិញខ្យល់ជួយបន្ថយក្ដៅ)'],
+      ['<ruby>日差し<rt>ひざし</rt></ruby>が<ruby>強<rt>つよ</rt></ruby>い', 'ពន្លឺថ្ងៃចាំងខ្លាំង']
+    ],
+    ans: 2,
+    exp: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>原因<rt>げんいん</rt></ruby>となる<ruby>環境要因<rt>かんきょうよういん</rt></ruby>は「<ruby>気温<rt>きおん</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い・<ruby>湿度<rt>しつど</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い・<ruby>風<rt>かぜ</rt></ruby>が<ruby>弱<rt>よわ</rt></ruby>い・<ruby>日差し<rt>ひざし</rt></ruby>が<ruby>強<rt>つよ</rt></ruby>い」です。<ruby>風<rt>かぜ</rt></ruby>が<ruby>強<rt>つよ</rt></ruby>いことは<ruby>原因<rt>げんいん</rt></ruby>ではありません。',
+    kmExp: 'កត្តាប្រឈមជំងឺក្ដៅថ្ងៃគឺ ក្ដៅខ្លាំង សំណើមខ្ពស់ គ្មានខ្យល់បក់ និងថ្ងៃចាំងខ្លាំង។ ខ្យល់បក់ខ្លាំងជួយระบายក្ដៅ មិនមែនជាមូលហេតុឡើយ។'
+  },
+  // ===== 123 =====
+  {
+    id: "SQ0123",
+    q: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>予防<rt>よぼう</rt></ruby>に<ruby>効果的<rt>こうかてき</rt></ruby>な<ruby>方法<rt>ほうほう</rt></ruby>はどれか。',
+    km: 'តើវិធីសាស្ត្រណាដែលមានប្រសិទ្ធភាពក្នុងការបង្ការជំងឺស្ទះខ្យល់ក្ដៅ (熱中症)?',
+    options: [
+      ['こまめに<ruby>水分<rt>すいぶん</rt></ruby>・<ruby>塩分<rt>えんぶん</rt></ruby>を<ruby>補給<rt>ほきゅう</rt></ruby>する', 'ឧស្សាហ៍ផឹកទឹក និងបំពេញជាតិអំបិលរ៉ែជាប្រចាំ'],
+      ['<ruby>厚着<rt>あつぎ</rt></ruby>をして<ruby>作業<rt>さぎょう</rt></ruby>する', 'ពាក់សម្លៀកបំពាក់ក្រាស់ៗពេលធ្វើការ'],
+      ['<ruby>暑<rt>あつ</rt></ruby>い<ruby>時間帯<rt>じかんたい</rt></ruby>に<ruby>作業<rt>さぎょう</rt></ruby>する', 'សម្រុកធ្វើការចំពេលថ្ងៃត្រង់ក្ដៅខ្លាំង'],
+      ['<ruby>水分<rt>すいぶん</rt></ruby>を<ruby>補給<rt>ほきゅう</rt></ruby>しなくてよい', 'មិនបាច់ផឹកទឹកបំពេញទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>熱中症予防<rt>ねっちゅうしょうよぼう</rt></ruby>にはこまめな<ruby>水分<rt>すいぶん</rt></ruby>・<ruby>塩分補給<rt>えんぶんほきゅう</rt></ruby>が<ruby>重要<rt>じゅうよう</rt></ruby>です。',
+    kmExp: 'ការឧស្សាហ៍ផឹកទឹក និងញ៉ាំអំបិលរ៉ែ (Sports drinks) ឱ្យបានញឹកញាប់ ទោះបីមិនទាន់ស្រេកទឹក គឺជាវិធីការពារដ៏មានប្រសិទ្ធភាព។'
+  },
+  // ===== 124 =====
+  {
+    id: "SQ0124",
+    q: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>重症<rt>じゅうしょう</rt></ruby>の<ruby>症状<rt>しょうじょう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណារោគសញ្ញាកម្រិតធ្ងន់ធ្ងរនៃជំងឺស្ទះខ្យល់ក្ដៅ (កម្រិតទី ៣)?',
+    options: [
+      ['<ruby>立ちくらみ<rt>たちくらみ</rt></ruby>', 'វិលមុខស្រឡទែន (កម្រិតស្រាល)'],
+      ['<ruby>筋肉痛<rt>きんにくつう</rt></ruby>', 'ឈឺសាច់ដុំ/រមួលក្រពើ (កម្រិតស្រាល)'],
+      ['<ruby>意識障害<rt>いしきしょうがい</rt></ruby>', 'បាត់បង់ស្មារតី វង្វេងវង្វាន់ ឬសន្លប់ (កម្រិតធ្ងន់)'],
+      ['<ruby>大量<rt>たいりょう</rt></ruby>の<ruby>発汗<rt>はっかん</rt></ruby>', 'បែកញើសខ្លាំង (កម្រិតស្រាល)']
+    ],
+    ans: 2,
+    exp: '<ruby>重症<rt>じゅうしょう</rt></ruby>の<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>では<ruby>意識障害<rt>いしきしょうがい</rt></ruby>・<ruby>けいれん<rt>けいれん</rt></ruby>・<ruby>高体温<rt>こうたいおん</rt></ruby>が<ruby>現<rt>あらわ</rt></ruby>れます。',
+    kmExp: 'រោគសញ្ញាកម្រិតធ្ងន់ធ្ងរនៃជំងឺក្ដៅថ្ងៃ គឺមានការបាត់បង់ស្មារតី សន្លប់ (意識障害) ប្រកាច់ និងខ្លួនក្ដៅខ្លាំង ដែលត្រូវបញ្ជូនទៅមន្ទីរពេទ្យជាបន្ទាន់។'
+  },
+  // ===== 125 =====
+  {
+    id: "SQ0125",
+    q: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>初期症状<rt>しょきしょうじょう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជារោគសញ្ញាដំណាក់កាលដំបូង (កម្រិតស្រាល) នៃជំងឺស្ទះខ្យល់ក្ដៅ?',
+    options: [
+      ['<ruby>立ちくらみ<rt>たちくらみ</rt></ruby>・<ruby>筋肉痛<rt>きんにくつう</rt></ruby>', 'វិលមុខស្រឡទែន និងឈឺរមួលសាច់ដុំ (កម្រិតស្រាល)'],
+      ['<ruby>意識障害<rt>いしきしょうがい</rt></ruby>', 'បាត់បង់ស្មារតី (កម្រិតធ្ងន់)'],
+      ['<ruby>けいれん<rt>けいれん</rt></ruby>', 'ប្រកាច់ខ្លួនប្រាណ (កម្រិតធ្ងន់)'],
+      ['<ruby>高体温<rt>こうたいおん</rt></ruby>', 'ក្ដៅខ្លួនខ្លាំងលើសលុប']
+    ],
+    ans: 0,
+    exp: '<ruby>軽症<rt>けいしょう</rt></ruby>の<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>症状<rt>しょうじょう</rt></ruby>には<ruby>立ちくらみ<rt>たちくらみ</rt></ruby>・<ruby>筋肉痛<rt>きんにくつう</rt></ruby>・<ruby>筋肉硬直<rt>きんにくこうちょく</rt></ruby>・<ruby>大量<rt>たいりょう</rt></ruby>の<ruby>発汗<rt>はっかん</rt></ruby>が<ruby>含<rt>ふく</rt></ruby>まれます。',
+    kmExp: 'រោគសញ្ញាដំបូង (កម្រិត ១) រួមមាន ៖ វិលមុខหน้ามืด (立ちくらみ), ឈឺរមួលសាច់ដុំ (筋肉痛), និងបែកញើសជោកជាំ។'
+  },
+  // ===== 126 =====
+  {
+    id: "SQ0126",
+    q: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>中等症<rt>ちゅうとうしょう</rt></ruby>の<ruby>症状<rt>しょうじょう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណារោគសញ្ញាកម្រិតមធ្យម (កម្រិតទី ២) នៃជំងឺស្ទះខ្យល់ក្ដៅ?',
+    options: [
+      ['<ruby>頭痛<rt>ずつう</rt></ruby>・<ruby>吐き気<rt>はきけ</rt></ruby>', 'ឈឺក្បាល និងចង់ក្អួតចង្អោរ (កម្រិតមធ្យម)'],
+      ['<ruby>立ちくらみ<rt>たちくらみ</rt></ruby>', 'វិលមុខស្រឡទែន (កម្រិតស្រាល)'],
+      ['<ruby>筋肉痛<rt>きんにくつう</rt></ruby>', 'ឈឺសាច់ដុំ (កម្រិតស្រាល)'],
+      ['<ruby>発汗<rt>はっかん</rt></ruby>', 'បែកញើស']
+    ],
+    ans: 0,
+    exp: '<ruby>中等症<rt>ちゅうとうしょう</rt></ruby>の<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>では<ruby>頭痛<rt>ずつう</rt></ruby>・<ruby>吐き気<rt>はきけ</rt></ruby>・<ruby>嘔吐<rt>おうと</rt></ruby>・<ruby>倦怠感<rt>けんたいかん</rt></ruby>が<ruby>現<rt>あらわ</rt></ruby>れます。',
+    kmExp: 'រោគសញ្ញាកម្រិតមធ្យម (កម្រិត ២) រួមមាន ៖ ឈឺក្បាល (頭痛), ចង់ក្អួត (吐き気), អស់កម្លាំងល្វើយខ្លាំង និងខ្សោយរាងកាយ។'
+  },
+  // ===== 127 =====
+  {
+    id: "SQ0127",
+    q: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>重症<rt>じゅうしょう</rt></ruby>な<ruby>症状<rt>しょうじょう</rt></ruby>が<ruby>現<rt>あらわ</rt></ruby>れた<ruby>場合<rt>ばあい</rt></ruby>の<ruby>対応<rt>たいおう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើត្រូវចាត់វិធានការយ៉ាងណា នៅពេលមានអ្នកជំងឺក្ដៅថ្ងៃកម្រិតធ្ងន់ធ្ងរបាត់បង់ស្មារតី?',
+    options: [
+      ['すぐに<ruby>救急車<rt>きゅうきゅうしゃ</rt></ruby>を<ruby>呼<rt>よ</rt></ruby>ぶ', 'ទូរស័ព្ទហៅរថយន្តសង្គ្រោះបន្ទាន់ (១១៩) ជាបន្ទាន់'],
+      ['<ruby>水<rt>みず</rt></ruby>を<ruby>飲<rt>の</rt></ruby>ませる', 'บังคับឱ្យផឹកទឹក'],
+      ['<ruby>休憩<rt>きゅうけい</rt></ruby>させる', 'ឱ្យសម្រាកសិនចាំមើល'],
+      ['<ruby>様子<rt>ようす</rt></ruby>を<ruby>見<rt>み</rt></ruby>る', 'ទុកសង្កេតមើលអាការៈសិន']
+    ],
+    ans: 0,
+    exp: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>の<ruby>重症<rt>じゅうしょう</rt></ruby>な<ruby>症状<rt>しょうじょう</rt></ruby>が<ruby>現<rt>あらわ</rt></ruby>れた<ruby>場合<rt>ばあい</rt></ruby>は、すぐに<ruby>救急車<rt>きゅうきゅうしゃ</rt></ruby>を<ruby>呼<rt>よ</rt></ruby>ぶことが<ruby>重要<rt>じゅうよう</rt></ruby>です。',
+    kmExp: 'ករណីសន្លប់បាត់ស្មារតី ឆ្លើយឆ្លងមិនដឹងរឿង ត្រូវទូរស័ព្ទហៅរថយន្តសង្គ្រោះបន្ទាន់ (១១៩) ភ្លាមៗ និងយកអ្នកជំងឺទៅកន្លែងម្លប់ខ្យល់ចេញចូលល្អ។'
+  },
+  // ===== 128 =====
+  {
+    id: "SQ0128",
+    q: '<ruby>農作業<rt>のうさぎょう</rt></ruby>による<ruby>死亡事故<rt>しぼうじこ</rt></ruby>の<ruby>発生<rt>はっせい</rt></ruby><ruby>件数<rt>けんすう</rt></ruby>は<ruby>全産業平均<rt>ぜんさんぎょうへいきん</rt></ruby>の<ruby>何倍<rt>なんばい</rt></ruby>か。',
+    km: 'តើអត្រាគ្រោះថ្នាក់ការងារបណ្ដាលឱ្យស្លាប់ក្នុងវិស័យកសិកម្ម គឺខ្ពស់ជាងមធ្យមភាគឧស្សាហកម្មទូទៅប៉ុន្មានដង?',
+    options: [
+      ['3<ruby>倍<rt>ばい</rt></ruby>', '៣ ដង'],
+      ['5<ruby>倍<rt>ばい</rt></ruby>', '៥ ដង'],
+      ['13<ruby>倍<rt>ばい</rt></ruby>', '១៣ ដង (ខ្ពស់ជាង ១៣ ដង)'],
+      ['20<ruby>倍<rt>ばい</rt></ruby>', '២០ ដង']
+    ],
+    ans: 2,
+    exp: '<ruby>農作業<rt>のうさぎょう</rt></ruby>による<ruby>死亡事故<rt>しぼうじこ</rt></ruby>の<ruby>発生件数<rt>はっせいけんすう</rt></ruby>は、<ruby>全産業平均<rt>ぜんさんぎょうへいきん</rt></ruby>の13<ruby>倍<rt>ばい</rt></ruby>です。（<ruby>農林水産省<rt>のうりんすいさんしょう</rt></ruby>データ）',
+    kmExp: 'យោងតាមទិន្នន័យក្រសួងកសិកម្មជប៉ុន អត្រាគ្រោះថ្នាក់ដល់ជីវិតក្នុងការងារកសិកម្ម គឺមានកម្រិតខ្ពស់រហូតដល់ ១៣ ដង ធៀបនឹងមធ្យមភាគឧស្សាហកម្មទូទៅ។'
+  },
+  // ===== 129 =====
+  {
+    id: "SQ0129",
+    q: 'ハインリッヒの<ruby>法則<rt>ほうそく</rt></ruby>によると、１<ruby>件<rt>けん</rt></ruby>の<ruby>重大事故<rt>じゅうだいじこ</rt></ruby>の<ruby>裏<rt>うら</rt></ruby>には<ruby>何件<rt>なんけん</rt></ruby>の「ヒヤリ・ハット」があるか。',
+    km: 'យោងតាមច្បាប់របស់ Heinrich (ហ្វដ ឬច្បាប់ ១:២៩:៣០០) តើនៅពីក្រោយគ្រោះថ្នាក់ធ្ងន់ធ្ងរ ១ ករណី មានហេតុការណ៍ស្ទើរកើតគ្រោះថ្នាក់ (Hiyari-Hatto) ចំនួនប៉ុន្មានករណី?',
+    options: [
+      ['30<ruby>件<rt>けん</rt></ruby>', '៣០ ករណី'],
+      ['100<ruby>件<rt>けん</rt></ruby>', '១០០ ករណី'],
+      ['300<ruby>件<rt>けん</rt></ruby>', '៣០០ ករណី'],
+      ['1000<ruby>件<rt>けん</rt></ruby>', '១០០០ ករណី']
+    ],
+    ans: 2,
+    exp: 'ハインリッヒの<ruby>法則<rt>ほうそく</rt></ruby>では、「１<ruby>件<rt>けん</rt></ruby>の<ruby>重大事故<rt>じゅうだいじこ</rt></ruby>の<ruby>裏<rt>うら</rt></ruby>には、29<ruby>件<rt>けん</rt></ruby>の<ruby>軽微<rt>けいび</rt></ruby>な<ruby>事故<rt>じこ</rt></ruby>と300<ruby>件<rt>けん</rt></ruby>の<ruby>ケガ<rt>けが</rt></ruby>に<ruby>至<rt>いた</rt></ruby>らない<ruby>事故<rt>じこ</rt></ruby>がある」とされています。',
+    kmExp: 'ច្បាប់ស្ដីពីអត្រាគ្រោះថ្នាក់របស់ Heinrich បង្ហាញថា មុននឹងកើតគ្រោះថ្នាក់ធ្ងន់ធ្ងរ ១ ដង គឺមានករណីគ្រោះថ្នាក់តូចតាច ២៩ ដង និងហេតុការណ៍ស្ទើរបង្កគ្រោះថ្នាក់ (Hiyari-Hatto) ចំនួន ៣០០ ដង។'
+  },
+  // ===== 130 =====
+  {
+    id: "SQ0130",
+    q: '<ruby>安全<rt>あんぜん</rt></ruby>な<ruby>農作業<rt>のうさぎょう</rt></ruby>のための<ruby>計画<rt>けいかく</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការរៀបចំផែនការសម្រាប់ការងារកសិកម្មប្រកបដោយសុវត្ថិភាព មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>時間<rt>じかん</rt></ruby>に<ruby>余裕<rt>よゆう</rt></ruby>のある<ruby>計画<rt>けいかく</rt></ruby>を<ruby>立てる<rt>たてる</rt></ruby>', 'រៀបចំផែនការដែលមានពេលទំនេរ/បន្ធូរបន្ថយគ្រប់គ្រាន់ (មិនប្រញាប់ប្រញាល)'],
+      ['<ruby>無理<rt>むり</rt></ruby>な<ruby>計画<rt>けいかく</rt></ruby>を<ruby>立てる<rt>たてる</rt></ruby>', 'រៀបចំផែនការតឹងតែងខ្លាំងពេក'],
+      ['<ruby>休憩時間<rt>きゅうけいじかん</rt></ruby>を<ruby>決<rt>き</rt></ruby>めない', 'មិនបាច់កំណត់ពេលសម្រាកទេ'],
+      ['<ruby>連絡手段<rt>れんらくしゅだん</rt></ruby>を<ruby>持<rt>も</rt></ruby>たない', 'មិនបាច់មានមធ្យោបាយទាក់ទងគ្នាទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>安全<rt>あんぜん</rt></ruby>な<ruby>農作業<rt>のうさぎょう</rt></ruby>のためには、<ruby>時間<rt>じかん</rt></ruby>に<ruby>余裕<rt>よゆう</rt></ruby>のある<ruby>計画<rt>けいかく</rt></ruby>を<ruby>立て<rt>たて</rt></ruby>、<ruby>休憩時間<rt>きゅうけいじかん</rt></ruby>もしっかり<ruby>決<rt>き</rt></ruby>めることが<ruby>重要<rt>じゅうよう</rt></ruby>です。',
+    kmExp: 'ការងារកសិកម្មងាយនឹងមានគ្រោះថ្នាក់ប្រសិនបើប្រញាប់ប្រញាល ដូច្នេះត្រូវរៀបចំផែនការដែលមានពេលគ្រប់គ្រាន់ និងមានពេលសម្រាកទៀងទាត់។'
+  },
+  // ===== 131 =====
+  {
+    id: "SQ0131",
+    q: '<ruby>農業機械<rt>のうぎょうきかい</rt></ruby>の<ruby>操作方法<rt>そうさほうほう</rt></ruby>の<ruby>基本<rt>きほん</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើគោលការណ៍គ្រឹះក្នុងការបញ្ជាគ្រឿងយន្តកសិកម្ម មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>初<rt>はじ</rt></ruby>めての<ruby>機械<rt>きかい</rt></ruby>は<ruby>説明書<rt>せつめいしょ</rt></ruby>を<ruby>読<rt>よ</rt></ruby>んでから<ruby>操作<rt>そうさ</rt></ruby>する', 'ត្រូវអានសៀវភៅណែនាំឱ្យបានច្បាស់លាស់ មុននឹងប្រើប្រាស់ម៉ាស៊ីនថ្មី'],
+      ['<ruby>初<rt>はじ</rt></ruby>めての<ruby>機械<rt>きかい</rt></ruby>は<ruby>説明書<rt>せつめいしょ</rt></ruby>を<ruby>読<rt>よ</rt></ruby>まずに<ruby>操作<rt>そうさ</rt></ruby>する', 'ប្រើម៉ាស៊ីនថ្មីដោយមិនបាច់អានសៀវភៅណែនាំ'],
+      ['<ruby>整備<rt>せいび</rt></ruby>は<ruby>自分<rt>じぶん</rt></ruby>でやらなくてよい', 'មិនបាច់ពិនិត្យថែទាំម៉ាស៊ីនដោយខ្លួនឯងទេ'],
+      ['<ruby>点検<rt>てんけん</rt></ruby>は<ruby>不要<rt>ふよう</rt></ruby>である', 'ការត្រួតពិនិត្យគឺមិនចាំបាច់ឡើយ']
+    ],
+    ans: 0,
+    exp: '<ruby>農業機械<rt>のうぎょうきかい</rt></ruby>は<ruby>初<rt>はじ</rt></ruby>めて<ruby>使<rt>つか</rt></ruby>う<ruby>時<rt>とき</rt></ruby>は<ruby>必<rt>かなら</rt></ruby>ず<ruby>取扱説明書<rt>とりあつかいせつめいしょ</rt></ruby>を<ruby>読<rt>よ</rt></ruby>み、<ruby>十分<rt>じゅうぶん</rt></ruby>に<ruby>練習<rt>れんしゅう</rt></ruby>してから<ruby>操作<rt>そうさ</rt></ruby>します。',
+    kmExp: 'រាល់ពេលប្រើប្រាស់ម៉ាស៊ីនកសិកម្មថ្មី ឬមិនធ្លាប់ប្រើ ត្រូវអានសៀវភៅណែនាំ (取扱説明書) និងហាត់សមឱ្យបានចတတ်ជំនូញជាមុនសិន។'
+  },
+  // ===== 132 =====
+  {
+    id: "SQ0132",
+    q: '<ruby>農業機械<rt>のうぎょうきかい</rt></ruby>の<ruby>変速<rt>へんそく</rt></ruby>について<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការប្ដូរលេខហ្គែរម៉ាស៊ីនកសិកម្ម មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>走行中<rt>そうこうちゅう</rt></ruby>や<ruby>作業中<rt>さぎょうちゅう</rt></ruby>に<ruby>変速<rt>へんそく</rt></ruby>しない', 'មិនត្រូវប្ដូរលេខហ្គែរខណៈពេលម៉ាស៊ីនកំពុងបើកបរ ឬកំពុងធ្វើការងារឡើយ (ត្រូវឈប់សិន)'],
+      ['<ruby>走行中<rt>そうこうちゅう</rt></ruby>に<ruby>変速<rt>へんそく</rt></ruby>する', 'ប្ដូរហ្គែរពេលកំពុងបើកបរលឿន'],
+      ['<ruby>作業中<rt>さぎょうちゅう</rt></ruby>に<ruby>変速<rt>へんそく</rt></ruby>する', 'ប្ដូរហ្គែរពេលកំពុងច្រូត ឬភ្ជួរ'],
+      ['<ruby>いつでも<rt>いつでも</rt></ruby><ruby>変速<rt>へんそく</rt></ruby>してよい', 'អាចប្ដូរហ្គែរពេលណាក៏បានតាមចិត្ត']
+    ],
+    ans: 0,
+    exp: '<ruby>農業機械<rt>のうぎょうきかい</rt></ruby>は<ruby>自動車<rt>じどうしゃ</rt></ruby>と<ruby>違い<rt>ちがい</rt></ruby>、<ruby>走行中<rt>そうこうちゅう</rt></ruby>や<ruby>作業中<rt>さぎょうちゅう</rt></ruby>に<ruby>ギヤ<rt>ぎや</rt></ruby>の<ruby>変速<rt>へんそく</rt></ruby>は<ruby>行<rt>おこな</rt></ruby>いません。',
+    kmExp: 'ម៉ាស៊ីនកសិកម្មខុសពីរថយន្ត គឺហាមប្ដូរលេខហ្គែរ (変速) ខណៈពេលម៉ាស៊ីនកំពុងបើកបរ ឬកំពុងធ្វើការ ដើម្បីការពារការខូចប្រអប់លេខ និងគ្រោះថ្នាក់។'
+  },
+  // ===== 133 =====
+  {
+    id: "SQ0133",
+    q: '<ruby>大型<rt>おおがた</rt></ruby>の<ruby>農業機械<rt>のうぎょうきかい</rt></ruby>に<ruby>使用<rt>しよう</rt></ruby>される<ruby>燃料<rt>ねんりょう</rt></ruby>はどれか。',
+    km: 'តើប្រេងឥន្ធនៈប្រភេទណាដែលត្រូវបានប្រើប្រាស់សម្រាប់ម៉ាស៊ីនកសិកម្មខ្នាតធំ (ឧ. ត្រាក់ទ័រធំ)?',
+    options: [
+      ['<ruby>軽油<rt>けいゆ</rt></ruby>', 'ប្រេងម៉ាស៊ូត (Diesel / 軽油)'],
+      ['ガソリン', 'ប្រេងសាំង (Gasoline)'],
+      ['<ruby>灯油<rt>とうゆ</rt></ruby>', 'ប្រេងកាត (Kerosene)'],
+      ['<ruby>重油<rt>じゅうゆ</rt></ruby>', 'ប្រេងម៉ាស៊ូតធ្ងន់ (Heavy oil)']
+    ],
+    ans: 0,
+    exp: '<ruby>大型<rt>おおがた</rt></ruby>の<ruby>農業機械<rt>のうぎょうきかい</rt></ruby>には、<ruby>軽油<rt>けいゆ</rt></ruby>を<ruby>燃料<rt>ねんりょう</rt></ruby>とするディーゼルエンジンが<ruby>使用<rt>しよう</rt></ruby>されます。',
+    kmExp: 'ម៉ាស៊ីនកសិកម្មខ្នាតធំភាគច្រើន ជាម៉ាស៊ីនម៉ាស៊ូត (Diesel engine) ដូច្នេះត្រូវប្រើប្រាស់ប្រេងម៉ាស៊ូត (軽油)។'
+  },
+  // ===== 134 =====
+  {
+    id: "SQ0134",
+    q: '<ruby>エンジン<rt>えんじん</rt></ruby>を<ruby>始動<rt>しどう</rt></ruby>する<ruby>際<rt>さい</rt></ruby>に<ruby>注意<rt>ちゅうい</rt></ruby>すべきことはどれか。',
+    km: 'តើត្រូវប្រុងប្រយ័ត្នអ្វីខ្លះនៅពេលចាប់ផ្ដើមបញ្ឆេះម៉ាស៊ីនកសិកម្ម?',
+    options: [
+      ['ホーンを<ruby>鳴<rt>な</rt></ruby>らして<ruby>周囲<rt>しゅうい</rt></ruby>に<ruby>知<rt>し</rt></ruby>らせる', 'ចុចស៊ីផ្លេ ឬស្រែកឱ្យសញ្ញាប្រាប់មនុស្សនៅជុំវិញខ្លួនឱ្យដឹងជាមុន'],
+      ['<ruby>周囲<rt>しゅうい</rt></ruby>に<ruby>知<rt>し</rt></ruby>らせなくてよい', 'មិនបាច់ឱ្យអ្នកណាដឹងទេ'],
+      ['すぐに<ruby>発進<rt>はっしん</rt></ruby>する', 'បញ្ឆេះហើយបើកចេញទៅភ្លាមៗ'],
+      ['<ruby>何<rt>なに</rt></ruby>も<ruby>確認<rt>かくにん</rt></ruby>しなくてよい', 'មិនបាច់ពិនិត្យជុំវិញម៉ាស៊ីនទេ']
+    ],
+    ans: 0,
+    exp: 'エンジン<ruby>始動<rt>しどう</rt></ruby><ruby>時<rt>じ</rt></ruby>はホーンを<ruby>鳴<rt>な</rt></ruby>らすか<ruby>声<rt>こえ</rt></ruby>をかけて<ruby>周囲<rt>しゅうい</rt></ruby>に<ruby>知<rt>し</rt></ruby>らせます。',
+    kmExp: 'មុនពេលបញ្ឆេះម៉ាស៊ីន ត្រូវពិនិត្យមើលកន្លែងអង្គុយ ផ្ដល់សញ្ញាស៊ីផ្លេ ឬស្រែកប្រាប់អ្នកនៅជុំវិញឱ្យបានដឹង ដើម្បីសុវត្ថិភាព។'
+  },
+  // ===== 135 =====
+  {
+    id: "SQ0135",
+    q: '<ruby>乗用型<rt>じょうようがた</rt></ruby>トラクターの<ruby>安全<rt>あんぜん</rt></ruby>な<ruby>乗車<rt>じょうしゃ</rt></ruby>・<ruby>降車<rt>こうしゃ</rt></ruby>について<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើវិធីឡើង និងចុះពីត្រាក់ទ័រប្រភេទមានកាប៊ីន/កន្លែងអង្គុយបើកបរ មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>車体<rt>しゃたい</rt></ruby>の<ruby>方向<rt>ほうこう</rt></ruby>を<ruby>向<rt>む</rt></ruby>いて<ruby>乗<rt>の</rt></ruby>り、<ruby>後<rt>うし</rt></ruby>ろ<ruby>向<rt>む</rt></ruby>きで<ruby>降<rt>お</rt></ruby>りる', 'ឡើងដោយបែរមុខចូលរករថយន្ត និងចុះដោយបែរមុខចូលរករថយន្ត (ចុះថយក្រោយ)'],
+      ['<ruby>前<rt>まえ</rt></ruby><ruby>向<rt>む</rt></ruby>きで<ruby>降<rt>お</rt></ruby>りる', 'ចុះដោយបែរមុខចេញក្រៅ'],
+      ['<ruby>子供<rt>こども</rt></ruby>を<ruby>膝<rt>ひざ</rt></ruby>に<ruby>乗<rt>の</rt></ruby>せて<ruby>運転<rt>うんてん</rt></ruby>する', 'ដាក់កូនក្មេងលើភ្លៅបើកបរ'],
+      ['<ruby>運転者<rt>うんてんしゃ</rt></ruby><ruby>以外<rt>いがい</rt></ruby>を<ruby>乗車<rt>じょうしゃ</rt></ruby>させる', 'ឱ្យមនុស្សផ្សេងជិះលើត្រាក់ទ័រជាមួយ']
+    ],
+    ans: 0,
+    exp: 'トラクターは<ruby>車体<rt>しゃたい</rt></ruby>の<ruby>方向<rt>ほうこう</rt></ruby>を<ruby>向<rt>む</rt></ruby>いて<ruby>乗<rt>の</rt></ruby>り、<ruby>後<rt>うし</rt></ruby>ろ<ruby>向<rt>む</rt></ruby>きで<ruby>降<rt>お</rt></ruby>ります。<ruby>前<rt>まえ</rt></ruby><ruby>向<rt>む</rt></ruby>きで<ruby>降<rt>お</rt></ruby>りると<ruby>危険<rt>きけん</rt></ruby>です。',
+    kmExp: 'ការឡើង និងចុះពីត្រាក់ទ័រ ត្រូវបែរមុខចូលរករថយន្ត ដៃកាន់ជណ្តើរឱ្យជាប់ ៣ ចំណុច និងចុះថយក្រោយ (បែរខ្នងចេញ) ហាមបែរមុខចុះមកក្រៅដាច់ខាត។'
+  },
+  // ===== 136 =====
+  {
+    id: "SQ0136",
+    q: 'トラクターの<ruby>道路走行<rt>どうろそうこう</rt></ruby>について<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការបើកបរត្រាក់ទ័រលើទ្រូងផ្លូវសាធារណៈ មួយណាត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>左右<rt>さゆう</rt></ruby>のブレーキペダルを<ruby>連結<rt>れんけつ</rt></ruby>して<ruby>走行<rt>そうこう</rt></ruby>する', 'ភ្ជាប់គន្លឹះហ្វ្រាំងឆ្វេង-ស្តាំចូលគ្នាឱ្យជាប់ មុនពេលបើកបរលើផ្លូវ'],
+      ['<ruby>左右<rt>さゆう</rt></ruby>のブレーキペダルを<ruby>連結<rt>れんけつ</rt></ruby>しないで<ruby>走行<rt>そうこう</rt></ruby>する', 'បើកបរដោយមិនបាច់ភ្ជាប់ហ្វ្រាំងឆ្វេងស្ដាំទេ'],
+      ['<ruby>高速道路<rt>こうそくどうろ</rt></ruby>を<ruby>走行<rt>そうこう</rt></ruby>する', 'បើកបរលើផ្លូវល្បឿនលឿន (Expressway)'],
+      ['<ruby>安全フレーム<rt>あんぜんふれーむ</rt></ruby>を<ruby>倒<rt>たお</rt></ruby>して<ruby>走行<rt>そうこう</rt></ruby>する', 'ទម្លាក់ស៊ុមសុវត្ថិភាពចុះពេលបើកបរលើផ្លូវ']
+    ],
+    ans: 0,
+    exp: 'トラクターは<ruby>圃場<rt>ほじょう</rt></ruby>から<ruby>出<rt>で</rt></ruby>る<ruby>時<rt>とき</rt></ruby>は<ruby>左右<rt>さゆう</rt></ruby>のブレーキペダルを<ruby>連結<rt>れんけつ</rt></ruby>します。<ruby>可倒式<rt>かとうしき</rt></ruby>の<ruby>安全フレーム<rt>あんぜんふれーむ</rt></ruby>は<ruby>直立<rt>ちょくりつ</rt></ruby>させます。',
+    kmExp: 'ពេលបើកបរត្រាក់ទ័រលើផ្លូវសាធារណៈ ត្រូវភ្ជាប់ហ្វ្រាំងឆ្វេងស្ដាំចូលគ្នា ដើម្បីការពារកុំឱ្យថ្នាំបត់ខុសទិសដៅក្នុងល្បឿនលឿន និងដំឡើងស៊ុមសុវត្ថិភាព (ROPS) ឱ្យឈរត្រង់។'
+  },
+  // ===== 137 =====
+  {
+    id: "SQ0137",
+    q: '<ruby>歩行型<rt>ほこうがた</rt></ruby>トラクターの<ruby>操作<rt>そうさ</rt></ruby>で<ruby>注意<rt>ちゅうい</rt></ruby>すべきことはどれか。',
+    km: 'តើត្រូវប្រុងប្រយ័ត្នអ្វីខ្លះពេលបញ្ជាត្រាក់ទ័រប្រភេទដើរតាម/គោយន្ត (歩行型トラクター)?',
+    options: [
+      ['<ruby>急<rt>きゅう</rt></ruby>な<ruby>方向転換<rt>ほうこうてんかん</rt></ruby>をしない', 'មិនត្រូវបត់បែនរហ័ស ឬកាច់ចង្កូតភ្លាមៗទេ'],
+      ['<ruby>高速<rt>こうそく</rt></ruby>で<ruby>走行<rt>そうこう</rt></ruby>する', 'បើកបរក្នុងល្បឿនលឿន'],
+      ['<ruby>片手<rt>かたて</rt></ruby>で<ruby>操作<rt>そうさ</rt></ruby>する', 'កាន់ចង្កូតបញ្ជាដោយដៃម្ខាង'],
+      ['<ruby>力<rt>ちから</rt></ruby>づくで<ruby>操作<rt>そうさ</rt></ruby>する', 'ប្រើកម្លាំងបាយកំហិតបត់បែន']
+    ],
+    ans: 0,
+    exp: '<ruby>歩行型<rt>ほこうがた</rt></ruby>トラクターは<ruby>急<rt>きゅう</rt></ruby>な<ruby>方向転換<rt>ほうこうてんかん</rt></ruby>や<ruby>力<rt>ちから</rt></ruby>づくでの<ruby>操作<rt>そうさ</rt></ruby>は<ruby>禁物<rt>きんもつ</rt></ruby>です。<ruby>後退<rt>こうたい</rt></ruby>（バック）<ruby>時<rt>じ</rt></ruby>はハンドルが<ruby>跳<rt>は</rt></ruby>ね<ruby>上<rt>あ</rt></ruby>がることがあります。',
+    kmExp: 'ត្រាក់ទ័រដើរតាមពេលថយក្រោយ ចង្កូតអាចលោតខ្ទាតបុកខ្លួនឯងបាន ដូច្នេះត្រូវប្រយ័ត្ន និងហាមបត់បែនកាច់បត់ស្រួចខ្លាំងពេក។'
+  },
+  // ===== 138 =====
+  {
+    id: "SQ0138",
+    q: '<ruby>田植機<rt>たうえき</rt></ruby>の<ruby>安全<rt>あんぜん</rt></ruby>な<ruby>作業<rt>さぎょう</rt></ruby><ruby>方法<rt>ほうほう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើវិធីសាស្ត្រធ្វើការដោយសុវត្ថិភាពជាមួយម៉ាស៊ីនស្ទូងស្រូវ (田植機) គឺអ្វី?',
+    options: [
+      ['<ruby>圃場<rt>ほじょう</rt></ruby>への<ruby>出入<rt>でい</rt></ruby>りに<ruby>注意<rt>ちゅうい</rt></ruby>する', 'ត្រូវប្រុងប្រយ័ត្នខ្ពស់ពេលបើកបរចូល និងចេញពីវាលស្រែ (ភក់រអិល ក្រឡាប់)'],
+      ['<ruby>補助者<rt>ほじょしゃ</rt></ruby>を<ruby>乗車<rt>じょうしゃ</rt></ruby>させる', 'ឱ្យមនុស្សឡើងជិះលើកន្លែងទប់ទ្រብ'],
+      ['<ruby>高速<rt>こうそく</rt></ruby>で<ruby>走行<rt>そうこう</rt></ruby>する', 'បើកបរក្នុងល្បឿនលឿនក្នុងស្រែ'],
+      ['<ruby>点検<rt>てんけん</rt></ruby>を<ruby>怠<rt>おこた</rt></ruby>る', 'មិនបាច់ពិនិត្យម៉ាស៊ីនទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>田植機<rt>たうえき</rt></ruby>は<ruby>圃場<rt>ほじょう</rt></ruby>への<ruby>出入<rt>でい</rt></ruby>りに<ruby>注意<rt>ちゅうい</rt></ruby>が<ruby>必要<rt>ひつよう</rt></ruby>です。<ruby>補助者<rt>ほじょしゃ</rt></ruby>を<ruby>乗車<rt>じょうしゃ</rt></ruby>させてはいけません。',
+    kmExp: 'ពេលបើកបរម៉ាស៊ីនស្ទូងឡើងចុះคันนา ឬចូលវាលស្រែ ត្រូវប្រយ័ត្នការក្រឡាប់ និងហាមដាច់ខាតមិនឱ្យមានមនុស្សជិះលើកន្លែងដាក់ដើមស្រូវឡើយ។'
+  },
+  // ===== 139 =====
+  {
+    id: "SQ0139",
+    q: 'コンバインの<ruby>安全<rt>あんぜん</rt></ruby>な<ruby>作業<rt>さぎょう</rt></ruby><ruby>方法<rt>ほうほう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើវិធីធ្វើការដោយសុវត្ថិភាពជាមួយម៉ាស៊ីនច្រូតស្រូវ (コンバイン) គឺអ្វី?',
+    options: [
+      ['わら<ruby>詰<rt>つ</rt></ruby>まりを<ruby>取<rt>と</rt></ruby>る<ruby>時<rt>とき</rt></ruby>はエンジンを<ruby>止<rt>と</rt></ruby>める', 'ត្រូវពន្លត់ម៉ាស៊ីនជាដាច់ខាតពេលដោះសម្អាតចំបើងស្ទះ'],
+      ['わら<ruby>詰<rt>つ</rt></ruby>まりを<ruby>取<rt>と</rt></ruby>る<ruby>時<rt>とき</rt></ruby>はエンジンをかけたまま<ruby>行<rt>おこな</rt></ruby>う', 'លូកទាញចំបើងចេញទាំងម៉ាស៊ីនកំពុងឆេះ'],
+      ['<ruby>後退<rt>こうたい</rt></ruby>する<ruby>時<rt>とき</rt></ruby>は<ruby>確認<rt>かくにん</rt></ruby>しなくてよい', 'មិនបាច់មើលក្រោយពេលថយក្រោយ'],
+      ['<ruby>手こぎ<rt>てこぎ</rt></ruby>の<ruby>時<rt>とき</rt></ruby>は<ruby>手袋<rt>てぶくろ</rt></ruby>を<ruby>着用<rt>ちゃくよう</rt></ruby>する', 'ពាក់ស្រោមដៃពេលច្រូតកាត់']
+    ],
+    ans: 0,
+    exp: 'コンバインのわら<ruby>詰<rt>つ</rt></ruby>まりを<ruby>除去<rt>じょきょ</rt></ruby>する<ruby>場合<rt>ばあい</rt></ruby>は<ruby>必<rt>かなら</rt></ruby>ずエンジンを<ruby>止<rt>と</rt></ruby>めてから<ruby>行<rt>おこな</rt></ruby>います。また、<ruby>手こぎ<rt>てこぎ</rt></ruby>の<ruby>時<rt>とき</rt></ruby>は<ruby>手袋<rt>てぶくろ</rt></ruby>をしてはいけません。',
+    kmExp: 'នៅពេលមានចំបើង ឬដើមស្រូវស្ទះជាប់ក្នុងធ្មេញកិនម៉ាស៊ីនច្រូត ត្រូវពន្លត់ម៉ាស៊ីនជាមុនសិន។ ហាមពាក់ស្រោមដៃពេលបញ្ចុកស្រូវដោយដៃផ្ទាល់។'
+  },
+  // ===== 140 =====
+  {
+    id: "SQ0140",
+    q: '<ruby>刈払機<rt>かりはらいき</rt></ruby>の<ruby>安全<rt>あんぜん</rt></ruby>な<ruby>作業<rt>さぎょう</rt></ruby><ruby>方法<rt>ほうほう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើវិធីធ្វើការដោយសុវត្ថិភាពជាមួយម៉ាស៊ីនកាត់ស្មៅស្ពាយ (刈払機) គឺអ្វី?',
+    options: [
+      ['<ruby>刈刃<rt>かりば</rt></ruby>の<ruby>左側<rt>ひだりがわ</rt></ruby><ruby>先端<rt>せんたん</rt></ruby>から1/3を<ruby>使<rt>つか</rt></ruby>う', 'ប្រើប្រាស់កាំបិតកាត់កន្លែងផ្នែក ១/៣ ខាងឆ្វេង'],
+      ['<ruby>刈刃<rt>かりば</rt></ruby>の<ruby>右半分<rt>みぎはんぶん</rt></ruby>を<ruby>使<rt>つか</rt></ruby>う', 'ប្រើប្រាស់កាំបិតផ្នែកខាងស្ដាំ'],
+      ['<ruby>飛散物防護カバー<rt>ひさんぶつぼうごかばー</rt></ruby>を<ruby>取<rt>と</rt></ruby>り<ruby>外<rt>はず</rt></ruby>す', 'ដោះគម្របការពារកំទេចថ្មចេញ'],
+      ['<ruby>草<rt>くさ</rt></ruby>が<ruby>詰<rt>つ</rt></ruby>まったらエンジンをかけたまま<ruby>取<rt>と</rt></ruby>り<ruby>除<rt>のぞ</rt></ruby>く', 'ដកស្មៅជាប់ទាំងម៉ាស៊ីនកំពុងឆេះ']
+    ],
+    ans: 0,
+    exp: '<ruby>刈払機<rt>かりはらいき</rt></ruby>は<ruby>刈刃<rt>かりば</rt></ruby>の<ruby>左側<rt>ひだりがわ</rt></ruby><ruby>先端<rt>せんたん</rt></ruby>から1/3の<ruby>部分<rt>ぶぶん</rt></ruby>を<ruby>使用<rt>しよう</rt></ruby>します。<ruby>右半分<rt>みぎはんぶん</rt></ruby>を<ruby>使<rt>つか</rt></ruby>うとキックバックが<ruby>起<rt>お</rt></ruby>きます。',
+    kmExp: 'ម៉ាស៊ីនកាត់ស្មៅវិលពីស្ដាំទៅឆ្វេង ដូច្នេះត្រូវប្រើប្រាស់កាំបិតផ្នែក ១/៣ ខាងឆ្វេងកាត់ស្មៅ ដើម្បីការពារកុំឱ្យផ្លែកាំបិតប៉ះទង្គិចលោតផ្លោង (Kickback)។'
+  },
+  // ===== 141 =====
+  {
+    id: "SQ0141",
+    q: '<ruby>刈払機<rt>かりはらいき</rt></ruby>の<ruby>複数<rt>ふくすう</rt></ruby>での<ruby>作業<rt>さぎょう</rt></ruby>における<ruby>安全距離<rt>あんぜんきょり</rt></ruby>はどれか。',
+    km: 'តើចម្ងាយសុវត្ថិភាពត្រូវឃ្លាតពីគ្នាប៉ុន្មានម៉ែត្រ ពេលប្រើម៉ាស៊ីនកាត់ស្មៅច្រើននាក់ក្នុងពេលតែមួយ?',
+    options: [
+      ['15m<ruby>以上<rt>いじょう</rt></ruby>', 'យ៉ាងហោចណាស់ ១៥ ម៉ែត្រឡើងទៅ'],
+      ['5m', '៥ ម៉ែត្រ'],
+      ['10m', '១០ ម៉ែត្រ'],
+      ['20m', '២០ ម៉ែត្រ']
+    ],
+    ans: 0,
+    exp: '<ruby>複数<rt>ふくすう</rt></ruby>で<ruby>刈払機<rt>かりはらいき</rt></ruby>を<ruby>作業<rt>さぎょう</rt></ruby>する<ruby>場合<rt>ばあい</rt></ruby>は15m<ruby>以上<rt>いじょう</rt></ruby>の<ruby>間隔<rt>かんかく</rt></ruby>をあけます。',
+    kmExp: 'កំឡុងពេលប្រើម៉ាស៊ីនកាត់ស្មៅច្រើននាក់ ត្រូវរក្សាគម្លាតពីគ្នាអប្បបរមា ១៥ ម៉ែត្រ ដើម្បីការពារថ្ម ឬវត្ថុរឹងខ្ទាតប៉ះគ្នា។'
+  },
+  // ===== 142 =====
+  {
+    id: "SQ0142",
+    q: '<ruby>家畜<rt>かちく</rt></ruby>による<ruby>事故<rt>じこ</rt></ruby>で<ruby>最も<rt>もっとも</rt></ruby><ruby>多<rt>おお</rt></ruby>いのはどれか。',
+    km: 'តើគ្រោះថ្នាក់ការងារដែលបង្កឡើងដោយសត្វពាហនៈ ច្រើនកើតឡើងពីសត្វប្រភេទណាជាងគេ?',
+    options: [
+      ['<ruby>牛<rt>うし</rt></ruby>による<ruby>事故<rt>じこ</rt></ruby>', 'គ្រោះថ្នាក់បង្កឡើងដោយសត្វគោ (ជាង ៨០%)'],
+      ['<ruby>豚<rt>ぶた</rt></ruby>による<ruby>事故<rt>じこ</rt></ruby>', 'គ្រោះថ្នាក់បង្កឡើងដោយសត្វជ្រូក'],
+      ['<ruby>馬<rt>うま</rt></ruby>による<ruby>事故<rt>じこ</rt></ruby>', 'គ្រោះថ្នាក់បង្កឡើងដោយសត្វសេះ'],
+      ['<ruby>鶏<rt>にわとり</rt></ruby>による<ruby>事故<rt>じこ</rt></ruby>', 'គ្រោះថ្នាក់បង្កឡើងដោយសត្វមាន់']
+    ],
+    ans: 0,
+    exp: '<ruby>家畜<rt>かちく</rt></ruby>による<ruby>事故<rt>じこ</rt></ruby>の８<ruby>割<rt>わり</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>は<ruby>牛<rt>うし</rt></ruby>によるものです。（<ruby>北海道<rt>ほっかいどう</rt></ruby>データ）',
+    kmExp: 'គ្រោះថ្នាក់ការងារក្នុងកសិដ្ឋានចិញ្ចឹមសត្វ លើសពី ៨០% គឺបង្កឡើងដោយសត្វគោ (ធាក់ ជាន់ ជល់ ឬផ្ទប់សង្កត់)។'
+  },
+  // ===== 143 =====
+  {
+    id: "SQ0143",
+    q: '<ruby>畜舎<rt>ちくしゃ</rt></ruby><ruby>内<rt>ない</rt></ruby>の<ruby>作業<rt>さぎょう</rt></ruby>で<ruby>注意<rt>ちゅうい</rt></ruby>すべき<ruby>危険<rt>きけん</rt></ruby>はどれか。',
+    km: 'តើគ្រោះថ្នាក់អន្តរាយអ្វីដែលត្រូវយកចិត្តទុកដាក់ខ្លាំងពេលធ្វើការក្នុងក្រោលសត្វ?',
+    options: [
+      ['アンモニアガスの<ruby>中毒<rt>ちゅうどく</rt></ruby>', 'ការពុលឧស្ម័នអាម៉ូញាក់ និងឧស្ម័នពុលពីលាមកសត្វ'],
+      ['<ruby>高温<rt>こうおん</rt></ruby>', 'សីតុណ្ហភាពក្ដៅខ្លាំងពេក'],
+      ['<ruby>低温<rt>ていおん</rt></ruby>', 'សីតុណ្ហភាពត្រជាក់ខ្លាំង'],
+      ['<ruby>騒音<rt>そうおん</rt></ruby>', 'សំឡេងរំខានខ្លាំង']
+    ],
+    ans: 0,
+    exp: '<ruby>畜舎<rt>ちくしゃ</rt></ruby><ruby>内<rt>ない</rt></ruby>では、<ruby>家畜<rt>かちく</rt></ruby>の<ruby>糞尿<rt>ふんにょう</rt></ruby>から<ruby>発生<rt>はっせい</rt></ruby>するアンモニアガスに<ruby>注意<rt>ちゅうい</rt></ruby>が<ruby>必要<rt>ひつよう</rt></ruby>です。',
+    kmExp: 'ក្នុងក្រោលសត្វបិទជិត ឧស្ម័នអាម៉ូញាក់ (Ammonia) និងអ៊ីដ្រូសែនស៊ុលហ្វីត ដែលកើតចេញពីលាមក និងទឹកនោម អាចបង្កជាพิษពុលដល់ផ្លូវដង្ហើម។'
+  },
+  // ===== 144 =====
+  {
+    id: "SQ0144",
+    q: '<ruby>畜産<rt>ちくさん</rt></ruby><ruby>現場<rt>げんば</rt></ruby>での<ruby>感染症<rt>かんせんしょう</rt></ruby><ruby>予防<rt>よぼう</rt></ruby>の<ruby>基本<rt>きほん</rt></ruby>はどれか。',
+    km: 'តើអ្វីជាមូលដ្ឋានគ្រឹះក្នុងការបង្ការជំងឺឆ្លងក្នុងកសិដ្ឋានចិញ្ចឹមសត្វ?',
+    options: [
+      ['<ruby>消毒<rt>しょうどく</rt></ruby>と<ruby>検疫<rt>けんえき</rt></ruby>の<ruby>徹底<rt>てってい</rt></ruby>', 'ការអនុវត្តការសម្លាប់មេរោគ និងការត្រួតពិនិត្យចត្តាឡីស័កឱ្យបានហ្មត់ចត់'],
+      ['<ruby>消毒<rt>しょうどく</rt></ruby>だけ', 'ធ្វើតែការសម្លាប់មេរោគ'],
+      ['<ruby>検疫<rt>けんえき</rt></ruby>だけ', 'ពិនិត្យជំងឺតែប៉ុណ្ណោះ'],
+      ['<ruby>何<rt>なに</rt></ruby>もしない', 'មិនបាច់ធ្វើអ្វីសោះ']
+    ],
+    ans: 0,
+    exp: '<ruby>畜産現場<rt>ちくさんげんば</rt></ruby>では、<ruby>消毒<rt>しょうどく</rt></ruby>と<ruby>検疫<rt>けんえき</rt></ruby>を<ruby>徹底<rt>てってい</rt></ruby>することが<ruby>感染症予防<rt>かんせんしょうよぼう</rt></ruby>の<ruby>基本<rt>きほん</rt></ruby>です。',
+    kmExp: 'ការសម្លាប់មេរោគយានយន្ត មនុស្សចូលក្រោល និងការពិនិត្យចត្តាឡីស័កសត្វទើបចូលថ្មី (消毒と検疫) គឺជាគោលការណ៍ទប់ស្កាត់ជំងឺឆ្លងចូលកសិដ្ឋាន។'
+  },
+  // ===== 145 =====
+  {
+    id: "SQ0145",
+    q: '<ruby>畜産<rt>ちくさん</rt></ruby><ruby>現場<rt>げんば</rt></ruby>での<ruby>事故<rt>じこ</rt></ruby><ruby>防止<rt>ぼうし</rt></ruby>のために<ruby>重要<rt>じゅうよう</rt></ruby>なことはどれか。',
+    km: 'តើអ្វីជាចំណុចសំខាន់ដើម្បីបង្ការគ្រោះថ្នាក់ការងារក្នុងកសិដ្ឋានចិញ្ចឹមសត្វ?',
+    options: [
+      ['ヒヤリハットの<ruby>報告<rt>ほうこく</rt></ruby>', 'ការរាយការណ៍ និងវិភាគហេតុការណ៍ស្ទើរកើតគ្រោះថ្នាក់ (Hiyari-Hatto)'],
+      ['ヒヤリハットを<ruby>隠<rt>かく</rt></ruby>す', 'ការលាក់បាំងពេលមានរឿងស្ទើរបង្កគ្រោះថ្នាក់'],
+      ['<ruby>安全<rt>あんぜん</rt></ruby>を<ruby>無視<rt>むし</rt></ruby>する', 'មិនអើពើនឹងច្បាប់សុវត្ថិភាព'],
+      ['<ruby>一人<rt>ひとり</rt></ruby>で<ruby>作業<rt>さぎょう</rt></ruby>する', 'បង្ខំចិត្តធ្វើការម្នាក់ឯង']
+    ],
+    ans: 0,
+    exp: 'ヒヤリハットの<ruby>報告<rt>ほうこく</rt></ruby>は<ruby>事故防止<rt>じこぼうし</rt></ruby>に<ruby>役<rt>やく</rt></ruby>立ちます。',
+    kmExp: 'ការរាយការណ៍ពីហេតុការណ៍ស្ទើរកើតគ្រោះថ្នាក់ (ヒヤリ・ハット) ជួយឱ្យក្រុមការងារដឹងមុន និងរកវិធានការទប់ស្កាត់មិនឱ្យកើតជាគ្រោះថ្នាក់ពិតប្រាកដ។'
+  },
+  // ===== 146 =====
+  {
+    id: "SQ0146",
+    q: '<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby><ruby>内<rt>ない</rt></ruby>の<ruby>作業<rt>さぎょう</rt></ruby>で<ruby>注意<rt>ちゅうい</rt></ruby>すべきことはどれか。',
+    km: 'តើត្រូវប្រុងប្រយ័ត្នអ្វីខ្លះពេលបំពេញការងារក្នុងក្រោលគោ?',
+    options: [
+      ['カウトレーナーの<ruby>位置<rt>いち</rt></ruby>を<ruby>確認<rt>かくにん</rt></ruby>する', 'ពិនិត្យមើលទីតាំងខ្សែភ្លើងកែឥរិយាបថគោ (カウトレーナー) កុំឱ្យប៉ះឆក់'],
+      ['<ruby>牛<rt>うし</rt></ruby>の<ruby>後<rt>うし</rt></ruby>ろに<ruby>立<rt>た</rt></ruby>つ', 'ឈរនៅចំពីក្រោយគូទគោ'],
+      ['<ruby>牛<rt>うし</rt></ruby>を<ruby>急<rt>きゅう</rt></ruby>に<ruby>動<rt>うご</rt></ruby>かす', 'ធ្វើឱ្យគោភ្ញាក់ផ្អើលរត់ភ្លាមៗ'],
+      ['<ruby>牛<rt>うし</rt></ruby>の<ruby>角<rt>つの</rt></ruby>を<ruby>掴<rt>つか</rt></ruby>む', 'ចាប់ទាញសួសស្នែងគោលេង']
+    ],
+    ans: 0,
+    exp: '<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby><ruby>内<rt>ない</rt></ruby>ではカウトレーナーの<ruby>位置<rt>いち</rt></ruby>を<ruby>確認<rt>かくにん</rt></ruby>して<ruby>作業<rt>さぎょう</rt></ruby>します。',
+    kmExp: 'ឧបករណ៍ Cow Trainer (カウトレーナー) គឺជាខ្សែដែកមានចរន្តអគ្គិសនីស្រាលផ្ដល់សញ្ញាដល់គោ ដូច្នេះត្រូវប្រយ័ត្នកុំឱ្យប៉ះពាល់ក្បាល និងដងខ្លួនពេលដើរឆ្លងកាត់។'
+  },
+  // ===== 147 =====
+  {
+    id: "SQ0147",
+    q: '<ruby>フリーストール牛舎<rt>ふりーすとーるぎゅうしゃ</rt></ruby>の<ruby>特徴<rt>とくちょう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើលក្ខណៈពិសេសនៃក្រោលគោបែបហ្វ្រីស្តុល (フリーストール牛舎) គឺអ្វី?',
+    options: [
+      ['<ruby>牛<rt>うし</rt></ruby>が<ruby>自由<rt>じゆう</rt></ruby>に<ruby>歩<rt>ある</rt></ruby>き<ruby>回<rt>まわ</rt></ruby>れる', 'គោអាចដើរហើរដោយសេរីក្នុងក្រោល និងមានកន្លែងដេកដាច់ដោយឡែក'],
+      ['<ruby>牛<rt>うし</rt></ruby>を<ruby>繋<rt>つな</rt></ruby>いで<ruby>飼育<rt>しいく</rt></ruby>する', 'ចងគោជាប់នឹងច្រវាក់មួយកន្លែង'],
+      ['<ruby>個体管理<rt>こたいかんり</rt></ruby>が<ruby>簡単<rt>かんたん</rt></6ruby>', 'ងាយស្រួលគ្រប់គ្រងគោបុគ្គលម្នាក់ៗ'],
+      ['<ruby>機械<rt>kikai</rt></ruby>を<ruby>使用<rt>しよう</rt></ruby>しやすい', 'មិនអាចប្រើប្រាស់ម៉ាស៊ីនច្របាច់ទឹកដោះបានទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>フリーストール牛舎<rt>ふりーすとーるぎゅうしゃ</rt></ruby>は<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby>の<ruby>中<rt>なか</rt></ruby>を<ruby>牛<rt>うし</rt></ruby>が<ruby>自由<rt>じゆう</rt></ruby>に<ruby>歩<rt>ある</rt></ruby>き<ruby>回<rt>まわ</rt></ruby>れる<ruby>飼養方法<rt>しようほうほう</rt></ruby>です。',
+    kmExp: 'ក្រោល Freestall គឺជាក្រោលដែលអនុញ្ញាតឱ្យគោដើរហើរដោយសេរី និងមានគ្រែដេកដាច់ដោយឡែក (Free stall) ជួយកាត់បន្ថយការនឿយហត់របស់គោ។'
+  },
+  // ===== 148 =====
+  {
+    id: "SQ0148",
+    q: 'サイレージの<ruby>調製<rt>ちょうせい</rt></ruby>に<ruby>利用<rt>りよう</rt></ruby>される<ruby>発酵<rt>はっこう</rt></ruby>はどれか。',
+    km: 'តើប្រភេទនៃការ fermentation (ការបង្កាត់) ណាដែលត្រូវបានប្រើប្រាស់ក្នុងការផលិតចំណីស៊ីឡាច (Silage)?',
+    options: [
+      ['<ruby>乳酸発酵<rt>にゅうさんはっこう</rt></ruby>', 'ការបង្កាត់ដោយអាស៊ីតឡាក់ទិក (Lactic acid fermentation)'],
+      ['<ruby>アルコール発酵<rt>あるこーるはっこう</rt></ruby>', 'ការបង្កាត់ដោយជាតិស្រា/អាល់កុល'],
+      ['<ruby>酢酸発酵<rt>さくさんはっこう</rt></ruby>', 'ការបង្កាត់ដោយអាស៊ីតអាសេទិក'],
+      ['<ruby>酪酸発酵<rt>らくさんはっこう</rt></ruby>', 'ការបង្កាត់ដោយអាស៊ីតប៊ុយទីរិក (ធ្វើឱ្យស៊ីឡាចខូចស្អុយ)']
+    ],
+    ans: 0,
+    exp: 'サイレージは<ruby>乳酸発酵<rt>にゅうさんはっこう</rt></ruby>を<ruby>利用<rt>りよう</rt></ruby>した<ruby>飼料<rt>しりょう</rt></ruby>の<ruby>調製方法<rt>ちょうせいほうほう</rt></ruby>です。',
+    kmExp: 'ស៊ីឡាច គឺជាការផ្អាប់ស្មៅ ឬពោតក្នុងបរិយាកាសគ្មានអាកាសធាតុ (Anaerobic) ដើម្បីបង្កើនបាក់តេរីអាស៊ីតឡាក់ទិក (乳酸発酵) រក្សាទុកបានយូរ និងឆ្ងាញ់។'
+  },
+  // ===== 149 =====
+  {
+    id: "SQ0149",
+    q: '<ruby>畜産<rt>ちくさん</rt></ruby><ruby>現場<rt>げんば</rt></ruby>での<ruby>転倒<rt>てんとう</rt></ruby><ruby>事故<rt>じこ</rt></ruby>の<ruby>原因<rt>げんいん</rt></ruby>として<ruby>最も<rt>もっとも</rt></ruby><ruby>多<rt>おお</rt></ruby>いのはどれか。',
+    km: 'តើមូលហេតុចម្បងដែលបង្កឱ្យមានគ្រោះថ្នាក់រអិលដួលជើង (転倒事故) ក្នុងកសិដ្ឋានចិញ្ចឹមសត្វគឺអ្វី?',
+    options: [
+      ['<ruby>床<rt>ゆか</rt></ruby>が<ruby>滑<rt>すべ</rt></ruby>りやすい', 'កម្រាលឥដ្ឋក្រោលសត្វរអិល (ដោយសារទឹក លាមក និងសំណើម)'],
+      ['<ruby>照明<rt>しょうめい</rt></ruby>が<ruby>暗<rt>くら</rt></ruby>い', 'ពន្លឺភ្លើងក្នុងក្រោលស្រអាប់ងងឹត'],
+      ['<ruby>機械<rt>きかい</rt></ruby>の<ruby>音<rt>おと</rt></ruby>がうるさい', 'សំឡេងម៉ាស៊ីនរំខានខ្លាំង'],
+      ['<ruby>作業者<rt>さぎょうしゃ</rt></ruby>の<ruby>不注意<rt>ふちゅうい</rt></ruby>', 'បុគ្គលិកខ្វះការប្រុងប្រយ័ត្ន']
+    ],
+    ans: 0,
+    exp: '<ruby>畜産現場<rt>ちくさんげんば</rt></ruby>での<ruby>転倒事故<rt>てんとうじこ</rt></ruby>の<ruby>最大<rt>さいだい</rt></ruby>の<ruby>原因<rt>げんいん</rt></ruby>は<ruby>床<rt>ゆか</rt></ruby>の<ruby>滑<rt>すべ</rt></ruby>りやすさです。',
+    kmExp: 'កម្រាលក្រោលសត្វតែងតែមានសំណើម លាមក និងទឹកនោម ដែលធ្វើឱ្យងាយរអិលដួលខ្លាំងបំផុត ដូច្នេះត្រូវពាក់ស្បែកជើងកវែងបាតស្អិតការពារការរអិល និងឧស្សាហ៍លាងសម្អាត។'
+  },
+  // ===== 150 =====
+  {
+    id: "SQ0150",
+    q: '<ruby>畜産<rt>ちくさん</rt></ruby><ruby>現場<rt>げんば</rt></ruby>での<ruby>安全<rt>あんぜん</rt></ruby>な<ruby>作業<rt>さぎょう</rt></ruby>のための<ruby>心構<rt>こころがま</rt></ruby>えとして<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើការតាំងចិត្ត ឬផ្នត់គំនិតត្រឹមត្រូវសម្រាប់ការងារប្រកបដោយសុវត្ថិភាពក្នុងកសិដ្ឋានចិញ្ចឹមសត្វគឺអ្វី?',
+    options: [
+      ['<ruby>安全<rt>あんぜん</rt></ruby>を<ruby>最優先<rt>さいゆうせん</rt></ruby>にする', 'ត្រូវផ្ដល់អាទិភាពខ្ពស់បំផុតដល់ «សុវត្ថិភាព» ជានិច្ច (安全を最優先)'],
+      ['<ruby>作業<rt>さぎょう</rt></ruby>の<ruby>能率<rt>のうりつ</rt></ruby>を<ruby>最優先<rt>さいゆうせん</rt></ruby>にする', 'យកល្បឿន និងប្រសិទ្ធភាពការងារជាធំ'],
+      ['<ruby>時間<rt>じかん</rt></ruby>を<ruby>最優先<rt>さいゆうせん</rt></ruby>にする', 'ប្រញាប់ប្រញាលឱ្យទាន់ពេលម៉ោង'],
+      ['<ruby>安全<rt>あんぜん</rt></ruby>を<ruby>無視<rt>むし</rt></ruby>する', 'មិនបាច់ខ្វល់ខ្វាយពីសុវត្ថិភាពទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>畜産現場<rt>ちくさんげんば</rt></ruby>では<ruby>安全<rt>あんぜん</rt></ruby>を<ruby>最優先<rt>さいゆうせん</rt></ruby>にすることが<ruby>重要<rt>じゅうよう</rt></ruby>です。',
+    kmExp: 'សុវត្ថិភាពគឺជាកត្តាចម្បងបំផុត (安全最優先) ក្នុងការបំពេញការងារគ្រប់ប្រភេទក្នុងកសិដ្ឋានចិញ្ចឹមសត្វ ដើម្បីការពារអាយុជីវិត និងសុខភាពកម្មករ។'
+  }
+        ];
+
+        // ============================================================
+        // 📌 STATE
+        // ============================================================
+
+        var currentQuestions = TEST_QUESTIONS;
+        var currentIndex = 0;
+        var score = 0;
+        var userAnswers = [];
+        var showKh = true;
+        var showFuri = true;
+        var useGoogleTTS = false;
+        var isLooping = false;
+        var isSpeaking = false;
+        var currentAudio = null;
+        var activeLoopType = '';
+        var activeLoopIndex = -1;
+
+        // ============================================================
+        // 📌 UTILITY
+        // ============================================================
+
+        function showToast(msg) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 3000);
+        }
+
+        function toggleKh() {
+            showKh = !showKh;
+            document.querySelectorAll('.km, .qkm').forEach(function(el) {
+                if (showKh) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+            var btn = document.getElementById('toggleKh');
+            btn.textContent = showKh ? 'ខ្មែរ' : 'ខ្មែរ';
+            btn.className = showKh ? 'active' : 'inactive';
+        }
+
+        function toggleFuri() {
+            showFuri = !showFuri;
+            document.querySelectorAll('rt').forEach(function(el) {
+                el.style.display = showFuri ? '' : 'none';
+            });
+            var btn = document.getElementById('toggleFuri');
+            btn.textContent = showFuri ? 'ふり' : 'ふり';
+            btn.className = showFuri ? 'active' : 'inactive';
+        }
+
+        function toggleGtts() {
+            useGoogleTTS = !useGoogleTTS;
+            var btn = document.getElementById('toggleGtts');
+            if (useGoogleTTS) {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-on';
+                showToast('🔊 Google TTS បើក');
+            } else {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-off';
+                showToast('🔊 Speech Synthesis បើក');
+            }
+            try {
+                localStorage.setItem('useGoogleTTS', useGoogleTTS ? 'true' : 'false');
+            } catch(e) {}
+        }
+
+        function stripFurigana(html) {
+            if (!html) return '';
+            var div = document.createElement('div');
+            div.innerHTML = html;
+            var rubies = div.querySelectorAll('ruby');
+            rubies.forEach(function(ruby) {
+                var rt = ruby.querySelector('rt');
+                var furigana = rt ? rt.textContent || rt.innerText || '' : '';
+                var kanji = ruby.textContent || ruby.innerText || '';
+                if (rt) { kanji = kanji.replace(rt.textContent || rt.innerText || '', ''); }
+                kanji = kanji.trim();
+                var replacement = furigana || kanji;
+                ruby.replaceWith(replacement);
+            });
+            div.querySelectorAll('rt, rp').forEach(function(el) { el.remove(); });
+            return div.textContent || div.innerText || '';
+        }
+
+        // ============================================================
+        // 📌 SPEECH
+        // ============================================================
+
+        function speakWithWebSpeech(text, callback) {
+            if (!window.speechSynthesis) {
+                if (callback) callback();
+                return;
+            }
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ja-JP';
+            u.rate = 0.85;
+
+            var voices = window.speechSynthesis.getVoices();
+            var googleVoice = voices.find(function(v) {
+                return v.lang === 'ja-JP' && v.name.toLowerCase().includes('google');
+            });
+            if (googleVoice) {
+                u.voice = googleVoice;
+            }
+
+            u.onstart = function() { isSpeaking = true; };
+            u.onend = function() {
+                isSpeaking = false;
+                if (isLooping && callback) callback();
+            };
+            u.onerror = function() {
+                isSpeaking = false;
+                if (isLooping && callback) setTimeout(callback, 1000);
+            };
+            window.speechSynthesis.speak(u);
+        }
+
+        function speakText(text, callback) {
+            if (!text || text.trim() === '') {
+                if (callback) callback();
+                return;
+            }
+
+            if (useGoogleTTS) {
+                if (typeof Android !== 'undefined' && typeof Android.speak === 'function') {
+                    Android.speak(text);
+                    isSpeaking = true;
+                    if (isLooping) {
+                        var est = Math.min(text.length * 100 + 2000, 30000);
+                        setTimeout(function() {
+                            isSpeaking = false;
+                            if (isLooping && callback) callback();
+                        }, est);
+                    }
+                    return;
+                }
+
+                try {
+                    var url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' +
+                        encodeURIComponent(text) + '&tl=ja&client=tw-ob';
+
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+
+                    var audio = new Audio(url);
+                    currentAudio = audio;
+                    audio.play();
+                    isSpeaking = true;
+
+                    audio.onended = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        if (isLooping && callback) callback();
+                    };
+
+                    audio.onerror = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        speakWithWebSpeech(text, callback);
+                    };
+
+                    return;
+                } catch (e) {
+                    speakWithWebSpeech(text, callback);
+                }
+                return;
+            }
+
+            speakWithWebSpeech(text, callback);
+        }
+
+        // ===== ប៊ូតុង "អាន" =====
+        function speakCurrentQuestion() {
+            if (!currentQuestions || currentQuestions.length === 0) return;
+            var q = currentQuestions[currentIndex];
+            var text = stripFurigana(q.q) + '。 ';
+            q.options.forEach(function(o, i) {
+                text += String.fromCharCode(65 + i) + '。 ' + stripFurigana(o[0]) + '。 ';
+            });
+            if (userAnswers[currentIndex] !== null) {
+                text += '正解は ' + stripFurigana(q.options[q.ans][0]) + ' です。 ';
+                text += stripFurigana(q.exp) + '。 ';
+            }
+            if (isLooping) {
+                speakText(text, function() {
+                    if (isLooping) speakCurrentQuestion();
+                });
+            } else {
+                speakText(text, null);
+            }
+        }
+
+        // ===== ប៊ូតុង "ឈប់" =====
+        function stopSpeech() {
+            isLooping = false;
+            activeLoopType = '';
+            activeLoopIndex = -1;
+
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            if (typeof Android !== 'undefined' && typeof Android.stop === 'function') {
+                Android.stop();
+            }
+
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+
+            isSpeaking = false;
+            var loopBtn = document.getElementById('loopBtn');
+            if (loopBtn) { loopBtn.textContent = '🔁'; loopBtn.classList.remove('loop-on'); }
+            showToast('⏸ បញ្ឈប់សំឡេង');
+        }
+
+        // ===== ប៊ូតុង "LOOP" =====
+        function toggleLoop() {
+            var loopBtn = document.getElementById('loopBtn');
+            if (!loopBtn) return;
+            if (isLooping) {
+                isLooping = false;
+                activeLoopType = '';
+                activeLoopIndex = -1;
+                loopBtn.textContent = '🔁';
+                loopBtn.classList.remove('loop-on');
+                showToast('⏸ បិទ Loop');
+            } else {
+                isLooping = true;
+                loopBtn.textContent = '🔁 LOOP';
+                loopBtn.classList.add('loop-on');
+                showToast('🔁 បើក Loop');
+            }
+        }
+
+        // ============================================================
+        // 📌 QUIZ ENGINE
+        // ============================================================
+
+        function renderQuestion() {
+            if (!currentQuestions || currentQuestions.length === 0) {
+                document.getElementById('contentArea').innerHTML = '<div style="text-align:center;padding:40px 0;color:#a0aec0">⏳ គ្មានសំណួរ</div>';
+                return;
+            }
+            var q = currentQuestions[currentIndex];
+            var total = currentQuestions.length;
+
+            document.getElementById('progressFill').style.width = ((currentIndex + 1) / total * 100) + '%';
+            document.getElementById('qscore').textContent = '✅ ' + score;
+            document.getElementById('qnum').textContent = '📌 សំណួរ ' + (currentIndex + 1) + '/' + total;
+
+            document.getElementById('prevBtn').disabled = (currentIndex === 0);
+            document.getElementById('nextBtn').disabled = false;
+
+            var html = '<div class="question-top">';
+            html += '<div class="qnum">📌 សំណួរ ' + (currentIndex + 1) + '/' + total + '</div>';
+            html += '<div class="tts-group">';
+            html += '<button class="tts-btn" onclick="speakCurrentQuestion()">🔊 អាន</button>';
+            html += '<button class="tts-btn" id="loopBtn" onclick="toggleLoop()">🔁</button>';
+            html += '<button class="tts-btn stop-btn" onclick="stopSpeech()">⏸ ឈប់</button>';
+            html += '</div></div>';
+
+            html += '<div class="qtext">' + q.q + '</div>';
+            html += '<div class="qkm' + (showKh ? '' : ' hidden') + '">🇰🇭 ' + q.km + '</div>';
+
+            q.options.forEach(function(o, i) {
+                var l = String.fromCharCode(65 + i);
+                var cls = '';
+                if (userAnswers[currentIndex] !== null) {
+                    if (i === q.ans) cls = 'correct';
+                    else if (i === userAnswers[currentIndex] && i !== q.ans) cls = 'wrong';
+                }
+                html += '<button class="choice ' + cls + '" onclick="selectAnswer(' + i + ')" ' +
+                    (userAnswers[currentIndex] !== null ? 'disabled style="pointer-events:none;"' : '') + '>';
+                html += '<span><b>' + l + '.</b> ' + o[0] + '</span>';
+                html += '<span class="km' + (showKh ? '' : ' hidden') + '">🇰🇭 ' + o[1] + '</span>';
+                html += '</button>';
+            });
+
+            document.getElementById('contentArea').innerHTML = html;
+
+            if (userAnswers[currentIndex] !== null) {
+                var idx = userAnswers[currentIndex];
+                var fb = '<div class="feedback">';
+                if (idx === q.ans) fb += '<strong>✅ ត្រឹមត្រូវ!</strong>';
+                else fb += '<strong>❌ ខុស!</strong> ចម្លើយត្រឹមត្រូវគឺ <strong>' + String.fromCharCode(65 + q.ans) + '</strong>';
+                fb += '<div class="exp">💡 ' + q.exp;
+                fb += '<span class="km' + (showKh ? '' : ' hidden') + '">🇰🇭 ' + q.kmExp + '</span>';
+                fb += '</div></div>';
+                document.getElementById('feedbackArea').innerHTML = fb;
+            } else {
+                document.getElementById('feedbackArea').innerHTML = '';
+            }
+
+            document.querySelectorAll('rt').forEach(function(el) {
+                el.style.display = showFuri ? '' : 'none';
+            });
+        }
+
+        function selectAnswer(i) {
+            if (userAnswers[currentIndex] !== null) return;
+            var q = currentQuestions[currentIndex];
+            userAnswers[currentIndex] = i;
+            if (i === q.ans) score++;
+            renderQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentIndex < currentQuestions.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        function showResult() {
+            stopSpeech();
+            var total = currentQuestions.length || 1;
+            var pass = score >= (total * 0.6);
+            var pct = Math.round(score / total * 100);
+
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('qnum').textContent = '📊 លទ្ធផល';
+            document.getElementById('qscore').textContent = '✅ ' + score;
+            document.getElementById('prevBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('feedbackArea').innerHTML = '';
+
+            document.getElementById('contentArea').innerHTML =
+                '<div class="result">' +
+                '<h2>🏆 លទ្ធផលប្រឡង</h2>' +
+                '<div class="score">' + score + '/' + total + '</div>' +
+                '<div class="label">ពិន្ទុ ( ' + pct + '% )</div>' +
+                '<div class="' + (pass ? 'pass' : 'fail') + '">' +
+                (pass ? '🎉 ប្រឡងជាប់!' : '💪 ព្យាយាមម្តងទៀត!') + '</div>' +
+                '<button class="btn-reset" onclick="resetQuiz()">📝 ប្រឡងម្តងទៀត</button>' +
+                '</div>';
+        }
+
+        function resetQuiz() {
+            stopSpeech();
+            currentIndex = 0;
+            score = 0;
+            userAnswers = new Array(currentQuestions.length).fill(null);
+            document.getElementById('feedbackArea').innerHTML = '';
+            renderQuestion();
+        }
+
+        // ============================================================
+        // 🚀 START
+        // ============================================================
+
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+        }
+
+        try {
+            var saved = localStorage.getItem('useGoogleTTS');
+            if (saved !== null) useGoogleTTS = saved === 'true';
+            var gttsBtn = document.getElementById('toggleGtts');
+            if (gttsBtn) gttsBtn.className = useGoogleTTS ? 'gtts-on' : 'gtts-off';
+        } catch(e) {}
+
+        userAnswers = new Array(currentQuestions.length).fill(null);
+        renderQuestion();
+    </script>
+</body>
+</html>

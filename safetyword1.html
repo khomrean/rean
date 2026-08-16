@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🛡️ សុវត្ថិភាព - ASAT</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;padding:12px;max-width:480px;margin:auto;min-height:100vh}
+        
+        .header{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,#38a169,#2f855a);color:#fff;padding:6px 8px;border-radius:14px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+        .header-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;align-items:center}
+        .header button{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:20px;padding:6px 2px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;text-align:center;width:100%;height:32px;display:flex;align-items:center;justify-content:center;gap:2px}
+        .header button:hover{background:rgba(255,255,255,0.25);transform:scale(1.03)}
+        .header button:active{transform:scale(0.92)}
+        .header button.active{background:#fff;color:#1a365d;border-color:#fff}
+        .header button.inactive{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.1)}
+        .header button.gtts-on{background:#2b6cb0;color:#fff;border-color:#38a169}
+        .header button.gtts-off{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.15)}
+        .header .nav-btn{font-size:14px;font-weight:700}
+        .header .nav-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none!important}
+
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2d3748;color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s}
+        .toast.show{opacity:1}
+
+        .card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:12px;min-height:400px}
+
+        .vocab-header{margin-bottom:12px}
+        .vocab-header h2{font-size:18px;color:#1a365d;margin-bottom:4px}
+        .vocab-actions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:8px 0;border-top:1px solid #f0f4f8;border-bottom:1px solid #f0f4f8}
+        .vocab-actions button{padding:6px 14px;border-radius:20px;border:1.5px solid #2b6cb0;font-size:12px;font-weight:600;cursor:pointer;transition:0.2s;background:rgba(43,108,176,0.05);color:#2b6cb0;white-space:nowrap}
+        .vocab-actions button:hover{background:#2b6cb0;color:#fff}
+        .vocab-actions button.stop-btn{border-color:#e53e3e;color:#e53e3e}
+        .vocab-actions button.stop-btn:hover{background:#e53e3e;color:#fff}
+        .vocab-actions button.loop-on{background:#38a169;color:#fff;border-color:#38a169}
+        .vocab-actions button.loop-on:hover{background:#2f855a}
+
+        .vocab-list{max-height:420px;overflow-y:auto}
+        .vocab-item{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #f0f4f8;gap:6px;flex-wrap:wrap}
+        .vocab-item:hover{background:#f7fafc;border-radius:8px}
+        .vocab-ja{flex:2;font-size:15px;font-weight:600;color:#1a202c;min-width:80px}
+        .vocab-ja ruby{font-weight:600}
+        .vocab-ja rt{font-size:10px;color:#2b6cb0}
+        .vocab-ja .num{color:#718096;font-weight:400;margin-right:4px}
+        .vocab-km{flex:2;font-size:13px;color:#4a5568;min-width:60px}
+        .vocab-km.hidden{display:none}
+        .vocab-speak{background:rgba(43,108,176,0.1);border:1.5px solid #2b6cb0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:12px;transition:0.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#2b6cb0}
+        .vocab-speak:hover{background:#2b6cb0;color:#fff}
+        .vocab-speak:active{transform:scale(0.9)}
+        .vocab-speak.listening{background:#48bb78;color:#fff;border-color:#48bb78;animation:pulse 1s infinite}
+        @keyframes pulse{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}
+
+        .nav-row{display:flex;gap:10px;margin-top:16px;align-items:center;justify-content:center}
+        .nav-row button{padding:10px 20px;border:0;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:0.2s}
+        .btn-prev{background:#e2e8f0;color:#4a5568}
+        .btn-prev:hover{background:#cbd5e0}
+        .btn-prev:disabled{opacity:0.3;cursor:not-allowed}
+        .btn-next{background:#2b6cb0;color:#fff}
+        .btn-next:hover{background:#1a365d}
+        .btn-next:disabled{opacity:0.3;cursor:not-allowed}
+        .page-indicator{font-size:14px;font-weight:600;color:#4a5568;min-width:60px;text-align:center}
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-grid">
+            <button class="nav-btn" id="prevBtn" onclick="prevVocabPage()" disabled>◀</button>
+            <button id="toggleKh" class="active" onclick="toggleKh()">ខ្មែរ</button>
+            <button id="toggleFuri" class="active" onclick="toggleFuri()">ふり</button>
+            <button id="toggleGtts" class="gtts-off" onclick="toggleGtts()">GTTS</button>
+            <button class="nav-btn" id="nextBtn" onclick="nextVocabPage()">▶</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">✅</div>
+
+    <div class="card" id="quizCard">
+        <div id="contentArea"></div>
+    </div>
+    <div id="feedbackArea"></div>
+
+    <script>
+        // ============================================================
+        // 🛡️ SAFETY VOCABULARY - 250 words (from ASAT textbooks)
+        // ============================================================
+
+        var vocabData = [
+            // ============================================================
+            // 1. LABOR LAWS & WORKER RIGHTS (30 words)
+            // ============================================================
+            { ja: '<ruby>労働基準法<rt>ろうどうきじゅんほう</rt></ruby>', speech: 'ろうどうきじゅんほう', km: 'ច្បាប់ស្ដីពីស្ដង់ដារការងារ' },
+            { ja: '<ruby>労働者<rt>ろうどうしゃ</rt></ruby>', speech: 'ろうどうしゃ', km: 'កម្មករ/ពលករ' },
+            { ja: '<ruby>使用者<rt>しようしゃ</rt></ruby>', speech: 'しようしゃ', km: 'និយោជក (ថៅកែ)' },
+            { ja: '<ruby>雇用<rt>こよう</rt></ruby>', speech: 'こよう', km: 'ការជួល/ការងារ' },
+            { ja: '<ruby>解雇<rt>かいこ</rt></ruby>', speech: 'かいこ', km: 'ការបញ្ឈប់ពីការងារ' },
+            { ja: '<ruby>退職<rt>たいしょく</rt></ruby>', speech: 'たいしょく', km: 'ការលាលែងពីការងារ' },
+            { ja: '<ruby>賃金<rt>ちんぎん</rt></ruby>', speech: 'ちんぎん', km: 'ប្រាក់ឈ្នួល' },
+            { ja: '<ruby>最低賃金<rt>さいていちんぎん</rt></ruby>', speech: 'さいていちんぎん', km: 'ប្រាក់ឈ្នួលអប្បបរមា' },
+            { ja: '<ruby>時給<rt>じきゅう</rt></ruby>', speech: 'じきゅう', km: 'ប្រាក់ឈ្នួលគិតជាម៉ោង' },
+            { ja: '<ruby>月給<rt>げっきゅう</rt></ruby>', speech: 'げっきゅう', km: 'ប្រាក់ខែប្រចាំខែ' },
+            { ja: '<ruby>残業<rt>ざんぎょう</rt></ruby>', speech: 'ざんぎょう', km: 'ការធ្វើការថែមម៉ោង' },
+            { ja: '<ruby>残業代<rt>ざんぎょうだい</rt></ruby>', speech: 'ざんぎょうだい', km: 'ប្រាក់ឈ្នួលថែមម៉ោង' },
+            { ja: '<ruby>深夜労働<rt>しんやろうどう</rt></ruby>', speech: 'しんやろうどう', km: 'ការងារវេនយប់ជ្រៅ' },
+            { ja: '<ruby>割増賃金<rt>わりましちんぎん</rt></ruby>', speech: 'わりましちんぎん', km: 'ប្រាក់ឈ្នួលបន្ថែម (ថែមម៉ោង/យប់/ថ្ងៃឈប់)' },
+            { ja: '<ruby>賞与<rt>しょうよ</rt></ruby>', speech: 'しょうよ', km: 'ប្រាក់រង្វាន់ (Bonus)' },
+            { ja: '<ruby>労働条件<rt>ろうどうじょうけん</rt></ruby>', speech: 'ろうどうじょうけん', km: 'លក្ខខណ្ឌការងារ' },
+            { ja: '<ruby>休憩<rt>きゅうけい</rt></ruby>', speech: 'きゅうけい', km: 'ការឈប់សម្រាក' },
+            { ja: '<ruby>休日<rt>きゅうじつ</rt></ruby>', speech: 'きゅうじつ', km: 'ថ្ងៃឈប់សម្រាក' },
+            { ja: '<ruby>年次有給休暇<rt>ねんじゆうきゅうきゅうか</rt></ruby>', speech: 'ねんじゆうきゅうきゅうか', km: 'ច្បាប់ឈប់សម្រាកប្រចាំឆ្នាំមានប្រាក់ឈ្នួល' },
+            { ja: '<ruby>法定労働時間<rt>ほうていろうどうじかん</rt></ruby>', speech: 'ほうていろうどうじかん', km: 'ម៉ោងការងារកំណត់ដោយច្បាប់' },
+            { ja: '<ruby>人事考課<rt>じんじこうか</rt></ruby>', speech: 'じんじこうか', km: 'ការវាយតម្លៃលទ្ធផលការងារបុគ្គលិក' },
+            { ja: '<ruby>教育研修<rt>きょういくけんしゅう</rt></ruby>', speech: 'きょういくけんしゅう', km: 'ការបណ្ដុះបណ្ដាល និងហ្វឹកហ្វឺន' },
+            { ja: '<ruby>昇格<rt>しょうかく</rt></ruby>', speech: 'しょうかく', km: 'ការដំឡើងតំណែង' },
+            { ja: '<ruby>昇給<rt>しょうきゅう</rt></ruby>', speech: 'しょうきゅう', km: 'ការដំឡើងប្រាក់ខែ' },
+            { ja: '<ruby>労働安全衛生法<rt>ろうどうあんぜんえいせいほう</rt></ruby>', speech: 'ろうどうあんぜんえいせいほう', km: 'ច្បាប់សុវត្ថិភាព និងអនាម័យការងារ' },
+            { ja: '<ruby>労働災害<rt>ろうどうさいがい</rt></ruby>', speech: 'ろうどうさいがい', km: 'គ្រោះថ្នាក់ការងារ' },
+            { ja: '<ruby>安全衛生<rt>あんぜんえいせい</rt></ruby>', speech: 'あんぜんえいせい', km: 'សុវត្ថិភាព និងអនាម័យ' },
+            { ja: '<ruby>安全基準<rt>あんぜんきじゅん</rt></ruby>', speech: 'あんぜんきじゅん', km: 'ស្ដង់ដារសុវត្ថិភាព' },
+            { ja: '<ruby>安全教育<rt>あんぜんきょういく</rt></ruby>', speech: 'あんぜんきょういく', km: 'ការអប់រំសុវត្ថិភាព' },
+            { ja: '<ruby>安全確認<rt>あんぜんかくにん</rt></ruby>', speech: 'あんぜんかくにん', km: 'ការត្រួតពិនិត្យបញ្ជាក់សុវត្ថិភាព' },
+
+            // ============================================================
+            // 2. PESTICIDE SAFETY (30 words)
+            // ============================================================
+            { ja: '<ruby>農薬<rt>のうやく</rt></ruby>', speech: 'のうやく', km: 'ថ្នាំកសិកម្ម/ថ្នាំសម្លាប់សត្វល្អិត' },
+            { ja: '<ruby>除草剤<rt>じょそうざい</rt></ruby>', speech: 'じょそうざい', km: 'ថ្នាំកម្ចាត់ស្មៅ' },
+            { ja: '<ruby>殺虫剤<rt>さっちゅうざい</rt></ruby>', speech: 'さっちゅうざい', km: 'ថ្នាំសម្លាប់សត្វល្អិត' },
+            { ja: '<ruby>殺菌剤<rt>さっきんざい</rt></ruby>', speech: 'さっきんざい', km: 'ថ្នាំសម្លាប់មេរោគ/ផ្សិត' },
+            { ja: '<ruby>散布<rt>さんぷ</rt></ruby>', speech: 'さんぷ', km: 'ការបាញ់ថ្នាំ/ការបាចថ្នាំ' },
+            { ja: '<ruby>飛散<rt>ひさん</rt></ruby>', speech: 'ひさん', km: 'ការសាយភាយ/ការហើរខ្ចាយនៃថ្នាំ' },
+            { ja: '<ruby>希釈倍率<rt>きしゃくばいりつ</rt></ruby>', speech: 'きしゃくばいりつ', km: 'កម្រិតសមាមាត្រលាយពន្រ' },
+            { ja: '<ruby>有効成分<rt>ゆうこうせいぶん</rt></ruby>', speech: 'ゆうこうせいぶん', km: 'សារធាតុសកម្ម' },
+            { ja: '<ruby>最終有効年月<rt>さいしゅうゆうこうねんげつ</rt></ruby>', speech: 'さいしゅうゆうこうねんげつ', km: 'កាលបរិច្ឆេទផុតកំណត់ប្រើប្រាស់' },
+            { ja: '<ruby>毒物<rt>どくぶつ</rt></ruby>', speech: 'どくぶつ', km: 'សារធាតុពុលខ្លាំង' },
+            { ja: '<ruby>劇物<rt>げきぶつ</rt></ruby>', speech: 'げきぶつ', km: 'សារធាតុពុលកម្រិតមធ្យម' },
+            { ja: '<ruby>普通物<rt>ふつうぶつ</rt></ruby>', speech: 'ふつうぶつ', km: 'សារធាតុពុលកម្រិតទាប (ធម្មតា)' },
+            { ja: '<ruby>農薬ラベル<rt>のうやくらべる</rt></ruby>', speech: 'のうやくらべる', km: 'ស្លាកសញ្ញាលើដបថ្នាំកសិកម្ម' },
+            { ja: '<ruby>注意喚起マーク<rt>ちゅういかんきまーく</rt></ruby>', speech: 'ちゅういかんきまーく', km: 'សញ្ញាដាស់តឿនឱ្យប្រុងប្រយ័ត្ន' },
+            { ja: '<ruby>警告マーク<rt>けいこくまーく</rt></ruby>', speech: 'けいこくまーく', km: 'សញ្ញាព្រមានគ្រោះថ្នាក់' },
+            { ja: '<ruby>禁止マーク<rt>きんしまーく</rt></ruby>', speech: 'きんしまーく', km: 'សញ្ញាហាមឃាត់' },
+            { ja: '<ruby>強制マーク<rt>きょうせいまーく</rt></ruby>', speech: 'きょうせいまーく', km: 'សញ្ញាតម្រូវឱ្យអនុវត្ត' },
+            { ja: '<ruby>医薬用外毒物<rt>いやくようがいどくぶつ</rt></ruby>', speech: 'いやくようがいどくぶつ', km: 'សារធាតុពុលមិនមែនឱសថ' },
+            { ja: '<ruby>医薬用外劇物<rt>いやくようがいげきぶつ</rt></ruby>', speech: 'いやくようがいげきぶつ', km: 'សារធាតុពុលខ្លាំងមិនមែនឱសថ' },
+            { ja: '<ruby>防除日誌<rt>ぼうじょにっし</rt></ruby>', speech: 'ぼうじょにっし', km: 'កំណត់ហេតុការពារកម្ចាត់សត្វល្អិត' },
+            { ja: '<ruby>使用記録<rt>しようきろく</rt></ruby>', speech: 'しようきろく', km: 'កំណត់ត្រាការប្រើប្រាស់' },
+            { ja: '<ruby>防除機器<rt>ぼうじょきき</rt></ruby>', speech: 'ぼうじょきき', km: 'ឧបករណ៍បាញ់ថ្នាំការពារដំណាំ' },
+            { ja: '<ruby>散布液<rt>さんぷえき</rt></ruby>', speech: 'さんぷえき', km: 'ទឹកថ្នាំដែលបានលាយសម្រាប់បាញ់' },
+            { ja: '<ruby>調製作業<rt>ちょうせいさぎょう</rt></ruby>', speech: 'ちょうせいさぎょう', km: 'ការងារលាយផ្សំទឹកថ្នាំ' },
+            { ja: '<ruby>散布液調製<rt>さんぷえきちょうせい</rt></ruby>', speech: 'さんぷえきちょうせい', km: 'ការលាយផ្សំទឹកថ្នាំបាញ់' },
+            { ja: '<ruby>散布量<rt>さんぷりょう</rt></ruby>', speech: 'さんぷりょう', km: 'បរិមាណទឹកថ្នាំដែលត្រូវបាញ់' },
+            { ja: '<ruby>散布従事者<rt>さんぷじゅうじしゃ</rt></ruby>', speech: 'さんぷじゅうじしゃ', km: 'អ្នកទទួលបន្ទុកបាញ់ថ្នាំ' },
+            { ja: '<ruby>散布後<rt>さんぷご</rt></ruby>', speech: 'さんぷご', km: 'ក្រោយពេលបាញ់ថ្នាំ' },
+            { ja: '<ruby>散布前<rt>さんぷまえ</rt></ruby>', speech: 'さんぷまえ', km: 'មុនពេលបាញ់ថ្នាំ' },
+            { ja: '<ruby>農薬使用基準<rt>のうやくしようきじゅん</rt></ruby>', speech: 'のうやくしようきじゅん', km: 'ស្ដង់ដារកំណត់នៃការប្រើប្រាស់ថ្នាំកសិកម្ម' },
+
+            // ============================================================
+            // 3. PERSONAL PROTECTIVE EQUIPMENT (PPE) (25 words)
+            // ============================================================
+            { ja: '<ruby>保護具<rt>ほごぐ</rt></ruby>', speech: 'ほごぐ', km: 'ឧបករណ៍ការពារខ្លួន (PPE)' },
+            { ja: '<ruby>ヘルメット<rt>へるめっと</rt></ruby>', speech: 'へるめっと', km: 'មួកសុវត្ថិភាព' },
+            { ja: '<ruby>ゴーグル<rt>ごーぐる</rt></ruby>', speech: 'ごーぐる', km: 'វ៉ែនតាការពារភ្នែកជិត' },
+            { ja: '<ruby>保護メガネ<rt>ほごめがね</rt></ruby>', speech: 'ほごめがね', km: 'វ៉ែនតាសុវត្ថិភាព' },
+            { ja: '<ruby>マスク<rt>ますく</rt></ruby>', speech: 'ますく', km: 'ម៉ាស់' },
+            { ja: '<ruby>防毒マスク<rt>ぼうどくますく</rt></ruby>', speech: 'ぼうどくますく', km: 'ម៉ាស់ការពារឧស្ម័នពុល' },
+            { ja: '<ruby>農薬用マスク<rt>のうやくようますく</rt></ruby>', speech: 'のうやくようますく', km: 'ម៉ាស់ការពារថ្នាំកសិកម្ម' },
+            { ja: '<ruby>防護マスク<rt>ぼうごますく</rt></ruby>', speech: 'ぼうごますく', km: 'ម៉ាស់ការពារសុវត្ថិភាព' },
+            { ja: '<ruby>吸収缶付き防護マスク<rt>きゅうしゅうかんつきぼうごますく</rt></ruby>', speech: 'きゅうしゅうかんつきぼうごますく', km: 'ម៉ាស់ការពារមានធុងស្រូបជាតិពុល' },
+            { ja: '<ruby>手袋<rt>てぶくろ</rt></ruby>', speech: 'てぶくろ', km: 'ស្រោមដៃ' },
+            { ja: '<ruby>不浸透性手袋<rt>ふしんとうせいてぶくろ</rt></ruby>', speech: 'ふしんとうせいてぶくろ', km: 'ស្រោមដៃមិនជ្រាបទឹក/ជាតិគីមី' },
+            { ja: '<ruby>長靴<rt>ながぐつ</rt></ruby>', speech: 'ながぐつ', km: 'ស្បែកជើងកវែង' },
+            { ja: '<ruby>安全靴<rt>あんぜんぐつ</rt></ruby>', speech: 'あんぜんぐつ', km: 'ស្បែកជើងសុវត្ថិភាព' },
+            { ja: '<ruby>防護服<rt>ぼうごふく</rt></ruby>', speech: 'ぼうごふく', km: 'ឈុតសម្លៀកបំពាក់ការពារ' },
+            { ja: '<ruby>防除衣<rt>ぼうじょい</rt></ruby>', speech: 'ぼうじょい', km: 'អាវការពារពេលបាញ់ថ្នាំ' },
+            { ja: '<ruby>不浸透性防除衣<rt>ふしんとうせいぼうじょい</rt></ruby>', speech: 'ふしんとうせいぼうじょい', km: 'អាវបាញ់ថ្នាំប្រភេទមិនជ្រាបទឹក' },
+            { ja: '<ruby>作業着<rt>さぎょうぎ</rt></ruby>', speech: 'さぎょうぎ', km: 'សម្លៀកបំពាក់ការងារ' },
+            { ja: '<ruby>長袖<rt>ながそで</rt></ruby>', speech: 'ながそで', km: 'អាវដៃវែង' },
+            { ja: '<ruby>長ズボン<rt>ながずぼん</rt></ruby>', speech: 'ながずぼん', km: 'ខោជើងវែង' },
+            { ja: '<ruby>防振手袋<rt>ぼうしんてぶくろ</rt></ruby>', speech: 'ぼうしんてぶくろ', km: 'ស្រោមដៃការពាររំញ័រ' },
+            { ja: '<ruby>耳栓<rt>みみせん</rt></ruby>', speech: 'みみせん', km: 'ប្រដាប់ញុកត្រចៀកការពារសំឡេង' },
+            { ja: '<ruby>安全帯<rt>あんぜんたい</rt></ruby>', speech: 'あんぜんたい', km: 'ខ្សែក្រវាត់សុវត្ថិភាពពាក់លើទីខ្ពស់' },
+            { ja: '<ruby>安全ネット<rt>あんぜんねっと</rt></ruby>', speech: 'あんぜんねっと', km: 'សំណាញ់សុវត្ថិភាពទប់ការធ្លាក់' },
+            { ja: '<ruby>防音マスク<rt>ぼうおんますく</rt></ruby>', speech: 'ぼうおんますく', km: 'ឧបករណ៍ការពារសំឡេងរំខាន' },
+            { ja: '<ruby>前掛け<rt>まえかけ</rt></ruby>', speech: 'まえかけ', km: 'អៀមការពារពីមុខ' },
+
+            // ============================================================
+            // 4. WASTE MANAGEMENT (20 words)
+            // ============================================================
+            { ja: '<ruby>廃棄物<rt>はいきぶつ</rt></ruby>', speech: 'はいきぶつ', km: 'កាកសំណល់/សំរាម' },
+            { ja: '<ruby>産業廃棄物<rt>さんぎょうはいきぶつ</rt></ruby>', speech: 'さんぎょうはいきぶつ', km: 'កាកសំណល់ឧស្សាហកម្ម' },
+            { ja: '<ruby>一般廃棄物<rt>いっぱんはいきぶつ</rt></ruby>', speech: 'いっぱんはいきぶつ', km: 'កាកសំណល់ទូទៅ' },
+            { ja: '<ruby>特別管理廃棄物<rt>とくべつかんりはいきぶつ</rt></ruby>', speech: 'とくべつかんりはいきぶつ', km: 'កាកសំណល់គ្រោះថ្នាក់គ្រប់គ្រងពិសេស' },
+            { ja: '<ruby>廃油<rt>はいゆ</rt></ruby>', speech: 'はいゆ', km: 'ប្រេងសំណល់/ប្រេងចាស់' },
+            { ja: '<ruby>廃プラスチック<rt>はいぷらすちっく</rt></ruby>', speech: 'はいぷらすちっく', km: 'សំណល់ប្លាស្ទិក' },
+            { ja: '<ruby>金属くず<rt>きんぞくくず</rt></ruby>', speech: 'きんぞくくず', km: 'កម្ទេចដែក/សំណល់លោហៈ' },
+            { ja: '<ruby>廃農薬<rt>はいのうやく</rt></ruby>', speech: 'はいのうやく', km: 'ថ្នាំកសិកម្មសល់ផុតកំណត់' },
+            { ja: '<ruby>ガラス<rt>がらす</rt></ruby>', speech: 'がらす', km: 'កញ្ចក់/ដបកែវ' },
+            { ja: '<ruby>紙くず<rt>かみくず</rt></ruby>', speech: 'かみくず', km: 'កម្ទេចក្រដាស' },
+            { ja: '<ruby>木くず<rt>きくず</rt></ruby>', speech: 'きくず', km: 'កម្ទេចឈើ/មែកឈើកាត់' },
+            { ja: '<ruby>繊維くず<rt>せんいくず</rt></ruby>', speech: 'せんいくず', km: 'កម្ទេចក្រណាត់/សរសៃអំបោះ' },
+            { ja: '<ruby>生ごみ<rt>なまごみ</rt></ruby>', speech: 'なまごみ', km: 'កាកសំណល់ផ្ទះបាយ/ម្ហូបសរីរាង្គ' },
+            { ja: '<ruby>マニフェスト<rt>まにふぇすと</rt></ruby>', speech: 'まにふぇすと', km: 'ប័ណ្ណតាមដានការចាត់ចែងសំណល់ (Manifest)' },
+            { ja: '<ruby>リサイクル<rt>りさいくる</rt></ruby>', speech: 'りさいくる', km: 'ការកែច្នៃឡើងវិញ' },
+            { ja: '<ruby>保管基準<rt>ほかんきじゅん</rt></ruby>', speech: 'ほかんきじゅん', km: 'ស្ដង់ដារនៃការរក្សាទុក' },
+            { ja: '<ruby>廃棄処分<rt>はいきしょぶん</rt></ruby>', speech: 'はいきしょぶん', km: 'ការបោះចោល/ការកម្ទេចកាកសំណល់' },
+            { ja: '<ruby>焼却<rt>しょうきゃく</rt></ruby>', speech: 'しょうきゃく', km: 'ការដុតកម្ទេចចោល' },
+            { ja: '<ruby>埋立<rt>うめたて</rt></ruby>', speech: 'うめたて', km: 'ការកប់ដី' },
+            { ja: '<ruby>分別<rt>ぶんべつ</rt></ruby>', speech: 'ぶんべつ', km: 'ការញែកប្រភេទសំរាម' },
+
+            // ============================================================
+            // 5. AGRICULTURAL MACHINERY SAFETY (30 words)
+            // ============================================================
+            { ja: '<ruby>農業機械<rt>のうぎょうきかい</rt></ruby>', speech: 'のうぎょうきかい', km: 'គ្រឿងយន្តកសិកម្ម' },
+            { ja: '<ruby>トラクター<rt>とらくたー</rt></ruby>', speech: 'とらくたー', km: 'ត្រាក់ទ័រ' },
+            { ja: '<ruby>乗用型トラクター<rt>じょうようがたとらくたー</rt></ruby>', speech: 'じょうようがたとらくたー', km: 'ត្រាក់ទ័រប្រភេទជិះបើកបរ' },
+            { ja: '<ruby>歩行型トラクター<rt>ほこうがたとらくたー</rt></ruby>', speech: 'ほこうがたとらくたー', km: 'ត្រាក់ទ័រប្រភេទដើរតាម' },
+            { ja: '<ruby>耕うん機<rt>こううんき</rt></ruby>', speech: 'こううんき', km: 'ម៉ាស៊ីនភ្ជួរដី/គោយន្ត' },
+            { ja: '<ruby>田植機<rt>たうえき</rt></ruby>', speech: 'たうえき', km: 'ម៉ាស៊ីនស្ទូងស្រូវ' },
+            { ja: '<ruby>コンバイン<rt>こんばいん</rt></ruby>', speech: 'こんばいん', km: 'ម៉ាស៊ីនច្រូត និងបោកស្រូវ' },
+            { ja: '<ruby>刈払機<rt>かりはらいき</rt></ruby>', speech: 'かりはらいき', km: 'ម៉ាស៊ីនកាត់ស្មៅស្ពាយ' },
+            { ja: '<ruby>安全運転<rt>あんぜんうんてん</rt></ruby>', speech: 'あんぜんうんてん', km: 'ការបើកបរប្រកបដោយសុវត្ថិភាព' },
+            { ja: '<ruby>安全速度<rt>あんぜんそくど</rt></ruby>', speech: 'あんぜんそくど', km: 'ល្បឿនសុវត្ថិភាព' },
+            { ja: '<ruby>転落事故<rt>てんらくじこ</rt></ruby>', speech: 'てんらくじこ', km: 'គ្រោះថ្នាក់ធ្លាក់ពីលើទីខ្ពស់/ធ្លាក់ច្រាំង' },
+            { ja: '<ruby>転倒事故<rt>てんとうじこ</rt></ruby>', speech: 'てんとうじこ', km: 'គ្រោះថ្នាក់ក្រឡាប់រថយន្ត/រអិលដួល' },
+            { ja: '<ruby>安全フレーム<rt>あんぜんふれーむ</rt></ruby>', speech: 'あんぜんふれーむ', km: 'ស៊ុមដែកសុវត្ថិភាពការពារពេលក្រឡាប់ (ROPS)' },
+            { ja: '<ruby>安全キャブ<rt>あんぜんきゃぶ</rt></ruby>', speech: 'あんぜんきゃぶ', km: 'កាប៊ីនសុវត្ថិភាពបិទជិត' },
+            { ja: '<ruby>シートベルト<rt>しーとべると</rt></ruby>', speech: 'しーとべると', km: 'ខ្សែក្រវាត់សុវត្ថិភាព' },
+            { ja: '<ruby>エンジン<rt>えんじん</rt></ruby>', speech: 'えんじん', km: 'ម៉ាស៊ីន/ក្បាលម៉ាស៊ីន' },
+            { ja: '<ruby>燃料<rt>ねんりょう</rt></ruby>', speech: 'ねんりょう', km: 'ប្រេងឥន្ធនៈ' },
+            { ja: '<ruby>給油<rt>きゅうゆ</rt></ruby>', speech: 'きゅうゆ', km: 'ការចាក់បំពេញប្រេង' },
+            { ja: '<ruby>整備<rt>せいび</rt></ruby>', speech: 'せいび', km: 'ការថែទាំ និងជួសជុល' },
+            { ja: '<ruby>点検<rt>てんけん</rt></ruby>', speech: 'てんけん', km: 'ការត្រួតពិនិត្យដំណើរការ' },
+            { ja: '<ruby>取扱説明書<rt>とりあつかいせつめいしょ</rt></ruby>', speech: 'とりあつかいせつめいしょ', km: 'សៀវភៅណែនាំការប្រើប្រាស់' },
+            { ja: '<ruby>操作<rt>そうさ</rt></ruby>', speech: 'そうさ', km: 'ការបញ្ជា/ប្រតិបត្តិការ' },
+            { ja: '<ruby>作業計画<rt>さぎょうけいかく</rt></ruby>', speech: 'さぎょうけいかく', km: 'ផែនការការងារ' },
+            { ja: '<ruby>安全管理<rt>あんぜんかんり</rt></ruby>', speech: 'あんぜんかんり', km: 'ការគ្រប់គ្រងសុវត្ថិភាព' },
+            { ja: '<ruby>研修会<rt>けんしゅうかい</rt></ruby>', speech: 'けんしゅうかい', km: 'សិក្ខាសាលាហ្វឹកហ្វឺន' },
+            { ja: '<ruby>実技講習<rt>じつぎこうしゅう</rt></ruby>', speech: 'じつぎこうしゅう', km: 'វគ្គបណ្ដុះបណ្ដាលអនុវត្តជាក់ស្ដែង' },
+            { ja: '<ruby>学科講習<rt>がっかこうしゅう</rt></ruby>', speech: 'がっかこうしゅう', km: 'វគ្គបណ្ដុះបណ្ដាលទ្រឹស្ដី' },
+            { ja: '<ruby>安全講習<rt>あんぜんこうしゅう</rt></ruby>', speech: 'あんぜんこうしゅう', km: 'វគ្គបណ្ដុះបណ្ដាលសុវត្ថិភាព' },
+            { ja: '<ruby>事故防止<rt>じこぼうし</rt></ruby>', speech: 'じこぼうし', km: 'ការបង្ការគ្រោះថ្នាក់' },
+            { ja: '<ruby>ヒヤリ・ハット<rt>ひやりはっと</rt></ruby>', speech: 'ひやりはっと', km: 'ហេតុការណ៍ស្ទើរកើតគ្រោះថ្នាក់ (ភ័យស្លន់ស្លោ)' },
+
+            // ============================================================
+            // 6. FARM SAFETY (25 words)
+            // ============================================================
+            { ja: '<ruby>農場<rt>のうじょう</rt></ruby>', speech: 'のうじょう', km: 'កសិដ្ឋាន' },
+            { ja: '<ruby>畜舎<rt>ちくしゃ</rt></ruby>', speech: 'ちくしゃ', km: 'ក្រោលសត្វ/រោងចិញ្ចឹម' },
+            { ja: '<ruby>衛生管理<rt>えいせいかんり</rt></ruby>', speech: 'えいせいかんり', km: 'ការគ្រប់គ្រងអនាម័យ' },
+            { ja: '<ruby>消毒<rt>しょうどく</rt></ruby>', speech: 'しょうどく', km: 'ការសម្លាប់មេរោគ' },
+            { ja: '<ruby>殺菌<rt>さっきん</rt></ruby>', speech: 'さっきん', km: 'ការសម្លាប់បាក់តេរី' },
+            { ja: '<ruby>検疫<rt>けんえき</rt></ruby>', speech: 'けんえき', km: 'ការធ្វើចត្តាឡីស័ក/ការត្រួតពិនិត្យជំងឺ' },
+            { ja: '<ruby>隔離<rt>かくり</rt></ruby>', speech: 'かくり', km: 'ការដាក់នៅដាច់ដោយឡែក' },
+            { ja: '<ruby>防疫<rt>ぼうえき</rt></ruby>', speech: 'ぼうえき', km: 'ការទប់ស្កាត់ការឆ្លងរោគ' },
+            { ja: '<ruby>獣医師<rt>じゅういし</rt></ruby>', speech: 'じゅういし', km: 'ពេទ្យសត្វ' },
+            { ja: '<ruby>予防注射<rt>よぼうちゅうしゃ</rt></ruby>', speech: 'よぼうちゅうしゃ', km: 'ការចាក់វ៉ាក់សាំងការពារ' },
+            { ja: '<ruby>ワクチン<rt>わくちん</rt></ruby>', speech: 'わくちん', km: 'វ៉ាក់សាំង' },
+            { ja: '<ruby>感染症<rt>かんせんしょう</rt></ruby>', speech: 'かんせんしょう', km: 'ជំងឺឆ្លង' },
+            { ja: '<ruby>伝染病<rt>でんせんびょう</rt></ruby>', speech: 'でんせんびょう', km: 'ជំងឺឆ្លងរាលដាល' },
+            { ja: '<ruby>高病原性鳥インフルエンザ<rt>こうびょうげんせいとりいんふるえんざ</rt></ruby>', speech: 'こうびょうげんせいとりいんふるえんざ', km: 'ជំងឺផ្ដាសាយបក្សីកម្រិតធ្ងន់ធ្ងរ (HPAI)' },
+            { ja: '<ruby>口蹄疫<rt>こうていえき</rt></ruby>', speech: 'こうていえき', km: 'ជំងឺអុតក្ដារៀន (FMD)' },
+            { ja: '<ruby>豚熱<rt>とんねつ</rt></ruby>', speech: 'とんねつ', km: 'ជំងឺប៉េស្តជ្រូកបុរាណ (CSF)' },
+            { ja: '<ruby>消毒液<rt>しょうどくえき</rt></ruby>', speech: 'しょうどくえき', km: 'ទឹកថ្នាំសម្លាប់មេរោគ' },
+            { ja: '<ruby>踏み込み消毒槽<rt>ふみこみしょうどくそう</rt></ruby>', speech: 'ふみこみしょうどくそう', km: 'អាងជាន់ជើងសម្លាប់មេរោគ' },
+            { ja: '<ruby>消石灰<rt>しょうせっかい</rt></ruby>', speech: 'しょうせっかい', km: 'កំបោរសម្លាប់មេរោគ (Slaked lime)' },
+            { ja: '<ruby>消毒用噴霧器<rt>しょうどくようふんむき</rt></ruby>', speech: 'しょうどくようふんむき', km: 'ម៉ាស៊ីនបាញ់ទឹកថ្នាំសម្លាប់មេរោគ' },
+            { ja: '<ruby>車両用消毒ゲート<rt>しゃりょうようしょうどくげーと</rt></ruby>', speech: 'しゃりょうようしょうどくげーと', km: 'ច្រកទ្វារបាញ់ថ្នាំសម្លាប់មេរោគលើយានយន្ត' },
+            { ja: '<ruby>消毒槽<rt>しょうどくそう</rt></ruby>', speech: 'しょうどくそう', km: 'អាងសម្លាប់មេរោគ' },
+            { ja: '<ruby>消毒薬<rt>しょうどくやく</rt></ruby>', speech: 'しょうどくやく', km: 'ថ្នាំសម្លាប់មេរោគ' },
+            { ja: '<ruby>殺ダニ剤<rt>さつだにざい</rt></ruby>', speech: 'さつだにざい', km: 'ថ្នាំសម្លាប់ចៃ/ត្មាតសត្វ' },
+            { ja: '<ruby>殺鼠剤<rt>さっそざい</rt></ruby>', speech: 'さっそざい', km: 'ថ្នាំសម្លាប់កណ្ដុរ' },
+
+            // ============================================================
+            // 7. OCCUPATIONAL HEALTH & HYGIENE (25 words)
+            // ============================================================
+            { ja: '<ruby>熱中症<rt>ねっちゅうしょう</rt></ruby>', speech: 'ねっちゅうしょう', km: 'ជំងឺស្ទះខ្យល់ក្ដៅ/ខ្យល់គរកម្ដៅថ្ងៃ' },
+            { ja: '<ruby>暑さ指数<rt>あつさしすう</rt></ruby>', speech: 'あつさしすう', km: 'សន្ទស្សន៍កម្ដៅ (WBGT)' },
+            { ja: '<ruby>水分補給<rt>すいぶんほきゅう</rt></ruby>', speech: 'すいぶんほきゅう', km: 'ការញ៉ាំបំពេញជាតិទឹក' },
+            { ja: '<ruby>塩分補給<rt>えんぶんほきゅう</rt></ruby>', speech: 'えんぶんほきゅう', km: 'ការញ៉ាំបំពេញជាតិអំបិល/រ៉ែ' },
+            { ja: '<ruby>換気<rt>かんき</rt></ruby>', speech: 'かんき', km: 'ការផ្លាស់ប្ដូរខ្យល់ចេញចូល' },
+            { ja: '<ruby>扇風機<rt>せんぷうき</rt></ruby>', speech: 'せんぷうき', km: 'កង្ហារ' },
+            { ja: '<ruby>冷却施設<rt>れいきゃくしせつ</rt></ruby>', speech: 'れいきゃくしせつ', km: 'ប្រព័ន្ធ/បន្ទប់ត្រជាក់' },
+            { ja: '<ruby>散水<rt>さんすい</rt></ruby>', speech: 'さんすい', km: 'ការបាញ់ស្រោចទឹកបន្ថយកម្ដៅ' },
+            { ja: '<ruby>植林<rt>しょくりん</rt></ruby>', speech: 'しょくりん', km: 'ការដាំដើមឈើបង្កើតម្លប់' },
+            { ja: '<ruby>休憩時間<rt>きゅうけいじかん</rt></ruby>', speech: 'きゅうけいじかん', km: 'ម៉ោងឈប់សម្រាក' },
+            { ja: '<ruby>疲労<rt>ひろう</rt></ruby>', speech: 'ひろう', km: 'ភាពអស់កម្លាំង/នឿយហត់' },
+            { ja: '<ruby>ストレス<rt>すとれす</rt></ruby>', speech: 'すとれす', km: 'ភាពតានតឹងអារម្មណ៍ (Stress)' },
+            { ja: '<ruby>健康管理<rt>けんこうかんり</rt></ruby>', speech: 'けんこうかんり', km: 'ការថែទាំគ្រប់គ្រងសុខភាព' },
+            { ja: '<ruby>栄養管理<rt>えいようかんり</rt></ruby>', speech: 'えいようかんり', km: 'ការគ្រប់គ្រងអាហារូបត្ថម្ភ' },
+            { ja: '<ruby>作業環境<rt>さぎょうかんきょう</rt></ruby>', speech: 'さぎょうかんきょう', km: 'បរិយាកាសកន្លែងធ្វើការ' },
+            { ja: '<ruby>屋外作業<rt>おくがいさぎょう</rt></ruby>', speech: 'おくがいさぎょう', km: 'ការងារក្រៅអាគារ/ទីវាល' },
+            { ja: '<ruby>室内作業<rt>しつないさぎょう</rt></ruby>', speech: 'しつないさぎょう', km: 'ការងារក្នុងអាគារ/ក្នុងម្លប់' },
+            { ja: '<ruby>長時間労働<rt>ちょうじかんろうどう</rt></ruby>', speech: 'ちょうじかんろうどう', km: 'ការធ្វើការងារច្រើនម៉ោងជ្រុល' },
+            { ja: '<ruby>過労<rt>かろう</rt></ruby>', speech: 'かろう', km: 'ការហត់នឿយលើសកម្លាំង' },
+            { ja: '<ruby>作業着<rt>さぎょうぎ</rt></ruby>', speech: 'さぎょうぎ', km: 'ខោអាវធ្វើការ' },
+            { ja: '<ruby>防暑対策<rt>ぼうしょたいさく</rt></ruby>', speech: 'ぼうしょたいさく', km: 'វិធានការការពារកម្ដៅថ្ងៃ' },
+            { ja: '<ruby>断熱材<rt>だんねつざい</rt></ruby>', speech: 'だんねつざい', km: 'សម្ភារៈទប់កម្ដៅ' },
+            { ja: '<ruby>風通し<rt>かぜとおし</rt></ruby>', speech: 'かぜとおし', km: 'ចរន្តខ្យល់បក់ចេញចូលល្អ' },
+            { ja: '<ruby>体温調節<rt>たいおんちょうせつ</rt></ruby>', speech: 'たいおんちょうせつ', km: 'ការគ្រប់គ្រងសម្រួលកម្ដៅក្នុងខ្លួន' },
+            { ja: '<ruby>体力消耗<rt>たいりょくしょうもう</rt></ruby>', speech: 'たいりょくしょうもう', km: 'ការបាត់បង់កម្លាំងកាយ' },
+
+            // ============================================================
+            // 8. EMERGENCY & FIRST AID (20 words)
+            // ============================================================
+            { ja: '<ruby>救急<rt>きゅうきゅう</rt></ruby>', speech: 'きゅうきゅう', km: 'ការសង្គ្រោះបន្ទាន់' },
+            { ja: '<ruby>応急処置<rt>おうきゅうしょち</rt></ruby>', speech: 'おうきゅうしょち', km: 'ការព្យាបាលសង្គ្រោះបឋម' },
+            { ja: '<ruby>心肺蘇生<rt>しんぱいそせい</rt></ruby>', speech: 'しんぱいそせい', km: 'ការសង្គ្រោះបេះដូងនិងសួត (CPR)' },
+            { ja: '<ruby>人工呼吸<rt>じんこうこきゅう</rt></ruby>', speech: 'じんこうこきゅう', km: 'ការធ្វើចលនាដង្ហើមសិប្បនិម្មិត' },
+            { ja: '<ruby>止血<rt>しけつ</rt></ruby>', speech: 'しけつ', km: 'ការឃាត់ឈាម' },
+            { ja: '<ruby>包帯<rt>ほうたい</rt></ruby>', speech: 'ほうたい', km: 'បង់រុំរបួស' },
+            { ja: '<ruby>救急箱<rt>きゅうきゅうばこ</rt></ruby>', speech: 'きゅうきゅうばこ', km: 'ប្រអប់ថ្នាំសង្គ្រោះបឋម' },
+            { ja: '<ruby>火災<rt>かさい</rt></ruby>', speech: 'かさい', km: 'គ្រោះអគ្គិភ័យ' },
+            { ja: '<ruby>消火器<rt>しょうかき</rt></ruby>', speech: 'しょうかき', km: 'បំពង់ពន្លត់អគ្គិភ័យ' },
+            { ja: '<ruby>避難<rt>ひなん</rt></ruby>', speech: 'ひなん', km: 'ការជម្លៀសខ្លួនរកកន្លែងសុវត្ថិភាព' },
+            { ja: '<ruby>避難経路<rt>ひなんけいろ</rt></ruby>', speech: 'ひなんけいろ', km: 'ផ្លូវជម្លៀសខ្លួនគ្រាអាសន្ន' },
+            { ja: '<ruby>救急車<rt>きゅうきゅうしゃ</rt></ruby>', speech: 'きゅうきゅうしゃ', km: 'រថយន្តសង្គ្រោះបន្ទាន់' },
+            { ja: '<ruby>病院<rt>びょういん</rt></ruby>', speech: 'びょういん', km: 'មន្ទីរពេទ្យ' },
+            { ja: '<ruby>医者<rt>いしゃ</rt></ruby>', speech: 'いしゃ', km: 'គ្រូពេទ្យ' },
+            { ja: '<ruby>中毒<rt>ちゅうどく</rt></ruby>', speech: 'ちゅうどく', km: 'ការពុល (ចំណី/ថ្នាំ/ឧស្ម័ន)' },
+            { ja: '<ruby>救出<rt>きゅうしゅつ</rt></ruby>', speech: 'きゅうしゅつ', km: 'ការជួយសង្គ្រោះចេញពីគ្រោះថ្នាក់' },
+            { ja: '<ruby>通報<rt>つうほう</rt></ruby>', speech: 'つうほう', km: 'ការរាយការណ៍បន្ទាន់ (ប៉ូលិស/ពន្លត់ភ្លើង)' },
+            { ja: '<ruby>連絡先<rt>れんらくさき</rt></ruby>', speech: 'れんらくさき', km: 'លេខ/អាសយដ្ឋានទំនាក់ទំនង' },
+            { ja: '<ruby>緊急時<rt>きんきゅうじ</rt></ruby>', speech: 'きんきゅうじ', km: 'ពេលមានអាសន្នបន្ទាន់' },
+            { ja: '<ruby>非常用<rt>ひじょうよう</rt></ruby>', speech: 'ひじょうよう', km: 'សម្រាប់ប្រើប្រាស់ពេលមានអាសន្ន' },
+
+            // ============================================================
+            // 9. CHEMICAL & FERTILIZER SAFETY (20 words)
+            // ============================================================
+            { ja: '<ruby>肥料<rt>ひりょう</rt></ruby>', speech: 'ひりょう', km: 'ជីកសិកម្ម' },
+            { ja: '<ruby>特殊肥料<rt>とくしゅひりょう</rt></ruby>', speech: 'とくしゅひりょう', km: 'ជីពិសេស (ជីកំប៉ុស/ជីលាមកសត្វ)' },
+            { ja: '<ruby>普通肥料<rt>ふつうひりょう</rt></ruby>', speech: 'ふつうひりょう', km: 'ជីធម្មតា (ជីគីមីដែលបានចុះបញ្ជី)' },
+            { ja: '<ruby>化学肥料<rt>かがくひりょう</rt></ruby>', speech: 'かがくひりょう', km: 'ជីគីមី' },
+            { ja: '<ruby>有機肥料<rt>ゆうきひりょう</rt></ruby>', speech: 'ゆうきひりょう', km: 'ជីសរីរាង្គ' },
+            { ja: '<ruby>堆肥<rt>たいひ</rt></ruby>', speech: 'たいひ', km: 'ជីកំប៉ុស' },
+            { ja: '<ruby>窒素<rt>ちっそ</rt></ruby>', speech: 'ちっそ', km: 'អាសូត (N)' },
+            { ja: '<ruby>りん酸<rt>りんさん</rt></ruby>', speech: 'りんさん', km: 'ផូស្វ័រ (P)' },
+            { ja: '<ruby>加里<rt>かり</rt></ruby>', speech: 'かり', km: 'ប៉ូតាស្យូម (K)' },
+            { ja: '<ruby>石灰<rt>せっかい</rt></ruby>', speech: 'せっかい', km: 'កំបោរ (Lime)' },
+            { ja: '<ruby>石灰窒素<rt>せっかいちっそ</rt></ruby>', speech: 'せっかいちっそ', km: 'ជីកាល់ស្យូមស៊ីយ៉ាណាមីត' },
+            { ja: '<ruby>生石灰<rt>せいせっかい</rt></ruby>', speech: 'せいせっかい', km: 'កំបោរឆៅ (Quicklime)' },
+            { ja: '<ruby>消石灰<rt>しょうせっかい</rt></ruby>', speech: 'しょうせっかい', km: 'កំបោរសម្លាប់មេរោគ (Slaked lime)' },
+            { ja: '<ruby>苦土<rt>くど</rt></ruby>', speech: 'くど', km: 'ម៉ាញេស្យូម (Mg)' },
+            { ja: '<ruby>マンガン<rt>まんがん</rt></ruby>', speech: 'まんがん', km: 'ម៉ង់ហ្គាណែស (Mn)' },
+            { ja: '<ruby>農薬入り肥料<rt>のうやくいりひりょう</rt></ruby>', speech: 'のうやくいりひりょう', km: 'ជីដែលមានលាយថ្នាំកសិកម្ម' },
+            { ja: '<ruby>保証票<rt>ほしょうひょう</rt></ruby>', speech: 'ほしょうひょう', km: 'ប័ណ្ណធានាគុណភាពជី' },
+            { ja: '<ruby>保証成分量<rt>ほしょうせいぶんりょう</rt></ruby>', speech: 'ほしょうせいぶんりょう', km: 'បរិមាណធាតុផ្សំដែលធានា' },
+            { ja: '<ruby>正味重量<rt>しょうみじゅうりょう</rt></ruby>', speech: 'しょうみじゅうりょう', km: 'ទម្ងន់សុទ្ធ (Net weight)' },
+            { ja: '<ruby>最終有効年月<rt>さいしゅうゆうこうねんげつ</rt></ruby>', speech: 'さいしゅうゆうこうねんげつ', km: 'កាលបរិច្ឆេទផុតកំណត់' },
+
+            // ============================================================
+            // 10. GENERAL SAFETY TERMS (25 words)
+            // ============================================================
+            { ja: '<ruby>危険<rt>きけん</rt></ruby>', speech: 'きけん', km: 'គ្រោះថ្នាក់' },
+            { ja: '<ruby>危険性<rt>きけんせい</rt></ruby>', speech: 'きけんせい', km: 'កម្រិតគ្រោះថ្នាក់' },
+            { ja: '<ruby>危険予知<rt>きけんよち</rt></ruby>', speech: 'きけんよち', km: 'ការទស្សន៍ទាយគ្រោះថ្នាក់ទុកជាមុន (KY)' },
+            { ja: '<ruby>予防<rt>よぼう</rt></ruby>', speech: 'よぼう', km: 'ការបង្ការទុកជាមុន' },
+            { ja: '<ruby>注意<rt>ちゅうい</rt></ruby>', speech: 'ちゅうい', km: 'ការប្រុងប្រយ័ត្ន' },
+            { ja: '<ruby>警告<rt>けいこく</rt></ruby>', speech: 'けいこく', km: 'ការព្រមាន' },
+            { ja: '<ruby>禁止<rt>きんし</rt></ruby>', speech: 'きんし', km: 'ការហាមឃាត់' },
+            { ja: '<ruby>強制<rt>きょうせい</rt></ruby>', speech: 'きょうせい', km: 'ការតម្រូវឱ្យធ្វើជាកាតព្វកិច្ច' },
+            { ja: '<ruby>安全第一<rt>あんぜんだいいち</rt></ruby>', speech: 'あんぜんだいいち', km: 'សុវត្ថិភាពជាចម្បង' },
+            { ja: '<ruby>安全対策<rt>あんぜんたいさく</rt></ruby>', speech: 'あんぜんたいさく', km: 'វិធានការសុវត្ថិភាព' },
+            { ja: '<ruby>安全管理<rt>あんぜんかんり</rt></ruby>', speech: 'あんぜんかんり', km: 'ការគ្រប់គ្រងសុវត្ថិភាព' },
+            { ja: '<ruby>安全衛生<rt>あんぜんえいせい</rt></ruby>', speech: 'あんぜんえいせい', km: 'សុវត្ថិភាព និងអនាម័យ' },
+            { ja: '<ruby>安全基準<rt>あんぜんきじゅん</rt></ruby>', speech: 'あんぜんきじゅん', km: 'ស្ដង់ដារសុវត្ថិភាព' },
+            { ja: '<ruby>安全教育<rt>あんぜんきょういく</rt></ruby>', speech: 'あんぜんきょういく', km: 'ការអប់រំសុវត្ថិភាព' },
+            { ja: '<ruby>安全確認<rt>あんぜんかくにん</rt></ruby>', speech: 'あんぜんかくにん', km: 'ការត្រួតពិនិត្យបញ្ជាក់សុវត្ថិភាព' },
+            { ja: '<ruby>事故防止<rt>じこぼうし</rt></ruby>', speech: 'じこぼうし', km: 'ការបង្ការគ្រោះថ្នាក់' },
+            { ja: '<ruby>ヒヤリ・ハット<rt>ひやりはっと</rt></ruby>', speech: 'ひやりはっと', km: 'ហេតុការណ៍ស្ទើរកើតគ្រោះថ្នាក់' },
+            { ja: '<ruby>ハインリッヒの法則<rt>はいんりっひのほうそく</rt></ruby>', speech: 'はいんりっひのほうそく', km: 'ច្បាប់ហៃនរិច (ច្បាប់គ្រោះថ្នាក់ ១:២៩:៣០០)' },
+            { ja: '<ruby>作業計画<rt>さぎょうけいかく</rt></ruby>', speech: 'さぎょうけいかく', km: 'ផែនការប្រតិបត្តិការងារ' },
+            { ja: '<ruby>作業環境<rt>さぎょうかんきょう</rt></ruby>', speech: 'さぎょうかんきょう', km: 'បរិយាកាសកន្លែងធ្វើការ' },
+            { ja: '<ruby>作業服<rt>さぎょうふく</rt></ruby>', speech: 'さぎょうふく', km: 'ខោអាវធ្វើការ' },
+            { ja: '<ruby>作業靴<rt>さぎょうぐつ</rt></ruby>', speech: 'さぎょうぐつ', km: 'ស្បែកជើងធ្វើការ' },
+            { ja: '<ruby>作業方法<rt>さぎょうほうほう</rt></ruby>', speech: 'さぎょうほうほう', km: 'វិធីសាស្ត្រធ្វើការងារ' },
+            { ja: '<ruby>作業手順<rt>さぎょうてじゅん</rt></ruby>', speech: 'さぎょうてじゅん', km: 'លំដាប់លំដោយនៃដំណាក់កាលការងារ' },
+            { ja: '<ruby>作業記録<rt>さぎょうきろく</rt></ruby>', speech: 'さぎょうきろく', km: 'កំណត់ត្រាការងារ' }
+        ];
+
+        // ============================================================
+        // 📌 STATE
+        // ============================================================
+
+        var vocabPage = 0;
+        var vocabPerPage = 5;
+        var showKh = true;
+        var showFuri = true;
+        var loopEnabled = false;
+        var useGoogleTTS = false;
+        var currentAudio = null;
+        var isSpeaking = false;
+        var activeLoopType = '';
+        var activeLoopIndex = -1;
+
+        // ============================================================
+        // 📌 SPEECH HELPERS
+        // ============================================================
+
+        function getSpeechText(wordObj) {
+            if (wordObj.speech && wordObj.speech.trim() !== '') {
+                return wordObj.speech.trim();
+            }
+            return stripFurigana(wordObj.ja);
+        }
+
+        function speakWithWebSpeech(text, callback) {
+            if (!window.speechSynthesis) {
+                if (callback) callback();
+                return;
+            }
+            
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ja-JP';
+            u.rate = 0.85;
+            
+            var voices = window.speechSynthesis.getVoices();
+            var googleVoice = voices.find(function(v) {
+                return v.lang === 'ja-JP' && v.name.toLowerCase().includes('google');
+            });
+            if (googleVoice) {
+                u.voice = googleVoice;
+            }
+            
+            u.onstart = function() { isSpeaking = true; };
+            u.onend = function() {
+                isSpeaking = false;
+                if (loopEnabled && callback) callback();
+            };
+            u.onerror = function() {
+                isSpeaking = false;
+                if (loopEnabled && callback) setTimeout(callback, 1000);
+            };
+            window.speechSynthesis.speak(u);
+        }
+
+        function speakVocabText(text, callback) {
+            if (!text || text.trim() === '') {
+                if (callback) callback();
+                return;
+            }
+
+            if (useGoogleTTS) {
+                if (typeof Android !== 'undefined' && typeof Android.speak === 'function') {
+                    Android.speak(text);
+                    isSpeaking = true;
+                    if (loopEnabled) {
+                        var est = Math.min(text.length * 100 + 2000, 30000);
+                        setTimeout(function() {
+                            isSpeaking = false;
+                            if (loopEnabled && callback) callback();
+                        }, est);
+                    }
+                    return;
+                }
+
+                try {
+                    var url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + 
+                              encodeURIComponent(text) + '&tl=ja&client=tw-ob';
+                    
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+                    
+                    var audio = new Audio(url);
+                    currentAudio = audio;
+                    audio.play();
+                    isSpeaking = true;
+                    
+                    audio.onended = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        if (loopEnabled && callback) callback();
+                    };
+                    
+                    audio.onerror = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        speakWithWebSpeech(text, callback);
+                    };
+                    
+                    return;
+                } catch (e) {
+                    speakWithWebSpeech(text, callback);
+                }
+                return;
+            }
+
+            speakWithWebSpeech(text, callback);
+        }
+
+        function stopSpeech() {
+            loopEnabled = false;
+            activeLoopType = '';
+            activeLoopIndex = -1;
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            
+            if (typeof Android !== 'undefined' && typeof Android.stop === 'function') {
+                Android.stop();
+            }
+            
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            isSpeaking = false;
+            showToast('⏸ បញ្ឈប់សំឡេង');
+            updateLoopBtnUI();
+            renderVocabulary();
+        }
+
+        // ============================================================
+        // 📌 UTILITY
+        // ============================================================
+
+        function stripFurigana(html) {
+            if (!html) return '';
+            var div = document.createElement('div');
+            div.innerHTML = html;
+            var rubies = div.querySelectorAll('ruby');
+            rubies.forEach(function(ruby) {
+                var rt = ruby.querySelector('rt');
+                var furigana = rt ? rt.textContent || rt.innerText || '' : '';
+                var kanji = ruby.textContent || ruby.innerText || '';
+                if (rt) { kanji = kanji.replace(rt.textContent || rt.innerText || '', ''); }
+                kanji = kanji.trim();
+                var replacement = furigana || kanji;
+                ruby.replaceWith(replacement);
+            });
+            div.querySelectorAll('rt, rp').forEach(function(el) { el.remove(); });
+            return div.textContent || div.innerText || '';
+        }
+
+        function showToast(msg) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 3000);
+        }
+
+        function toggleKh() {
+            showKh = !showKh;
+            document.querySelectorAll('.vocab-km').forEach(function(el) {
+                if (showKh) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+            var btn = document.getElementById('toggleKh');
+            btn.textContent = showKh ? 'ខ្មែរ' : 'ខ្មែរ';
+            btn.className = showKh ? 'active' : 'inactive';
+        }
+
+        function toggleFuri() {
+            showFuri = !showFuri;
+            document.querySelectorAll('rt').forEach(function(el) {
+                el.style.display = showFuri ? '' : 'none';
+            });
+            var btn = document.getElementById('toggleFuri');
+            btn.textContent = showFuri ? 'ふり' : 'ふり';
+            btn.className = showFuri ? 'active' : 'inactive';
+        }
+
+        function toggleGtts() {
+            useGoogleTTS = !useGoogleTTS;
+            var btn = document.getElementById('toggleGtts');
+            if (useGoogleTTS) {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-on';
+                showToast('🔊 Google TTS បើក');
+            } else {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-off';
+                showToast('🔊 Speech Synthesis បើក');
+            }
+            try {
+                localStorage.setItem('useGoogleTTS', useGoogleTTS ? 'true' : 'false');
+            } catch(e) {}
+        }
+
+        // ============================================================
+        // 📖 VOCABULARY RENDER
+        // ============================================================
+
+        function renderVocabulary() {
+            if (!vocabData || vocabData.length === 0) {
+                document.getElementById('contentArea').innerHTML = 
+                    '<div style="text-align:center;padding:40px 0;color:#a0aec0"><p>សូមបញ្ចូលពាក្យក្នុង <code>vocabData</code></p></div>';
+                return;
+            }
+
+            var totalPages = Math.ceil(vocabData.length / vocabPerPage);
+            var start = vocabPage * vocabPerPage;
+            var end = Math.min(start + vocabPerPage, vocabData.length);
+            var pageWords = vocabData.slice(start, end);
+
+            document.getElementById('prevBtn').disabled = (vocabPage === 0);
+            document.getElementById('nextBtn').disabled = (vocabPage >= totalPages - 1);
+
+            var html = '<div class="vocab-header">';
+            html += '<h2>🛡️ សុវត្ថិភាព</h2>';
+            html += '<div class="vocab-actions">';
+            html += '<button onclick="speakPageVocab()">🔊 អាន១ទំព័រ</button>';
+            html += '<button onclick="speakAllVocab()">🔊 អានទាំងអស់</button>';
+            html += '<button id="vocabLoopBtn" onclick="toggleLoop()">🔁</button>';
+            html += '<button class="stop-btn" onclick="stopSpeech()">⏸ ឈប់</button>';
+            html += '</div></div>';
+
+            html += '<div class="vocab-list">';
+            pageWords.forEach(function(word, index) {
+                var realIndex = start + index;
+                var isLooping = loopEnabled && activeLoopType === 'single' && activeLoopIndex === realIndex;
+                html += '<div class="vocab-item" data-index="' + realIndex + '">';
+                html += '<div class="vocab-ja"><span class="num">' + (realIndex + 1) + '.</span> ' + word.ja + '</div>';
+                html += '<div class="vocab-km">' + word.km + '</div>';
+                html += '<button class="vocab-speak' + (isLooping ? ' listening' : '') + '" onclick="speakSingleWord(' + realIndex + ')">🔊</button>';
+                html += '</div>';
+            });
+            html += '</div>';
+
+            html += '<div class="nav-row">';
+            html += '<button class="btn-prev" onclick="prevVocabPage()" ' + (vocabPage === 0 ? 'disabled' : '') +
+                '>◀ មុន</button>';
+            html += '<span class="page-indicator">' + (vocabPage + 1) + '/' + totalPages + '</span>';
+            html += '<button class="btn-next" onclick="nextVocabPage()" ' + (vocabPage >= totalPages - 1 ? 'disabled' : '') +
+                '>បន្ទាប់ ▶</button>';
+            html += '</div>';
+
+            document.getElementById('contentArea').innerHTML = html;
+            updateLoopBtnUI();
+            document.querySelectorAll('rt').forEach(function(el) { el.style.display = showFuri ? '' : 'none'; });
+        }
+
+        // ============================================================
+        // 🔁 LOOP CONTROL
+        // ============================================================
+
+        function toggleLoop() {
+            if (loopEnabled) {
+                loopEnabled = false;
+                activeLoopType = '';
+                activeLoopIndex = -1;
+                stopSpeech();
+                showToast('⏸ បិទ Loop');
+                updateLoopBtnUI();
+                renderVocabulary();
+                return;
+            }
+            
+            loopEnabled = true;
+            showToast('🔁 បើក Loop');
+            updateLoopBtnUI();
+        }
+
+        function updateLoopBtnUI() {
+            var btn = document.getElementById('vocabLoopBtn');
+            if (btn) {
+                if (loopEnabled) {
+                    btn.textContent = '🔁 LOOP';
+                    btn.classList.add('loop-on');
+                } else {
+                    btn.textContent = '🔁';
+                    btn.classList.remove('loop-on');
+                }
+            }
+        }
+
+        // ============================================================
+        // 🔊 SPEAK FUNCTIONS
+        // ============================================================
+
+        function speakSingleWord(index) {
+            if (!vocabData || vocabData.length === 0) return;
+            var word = vocabData[index];
+            if (!word) return;
+
+            if (!loopEnabled) {
+                var text = getSpeechText(word);
+                speakVocabText(text, function() {});
+                return;
+            }
+
+            activeLoopType = 'single';
+            activeLoopIndex = index;
+            showToast('🔁 Loop ពាក្យ ' + (index + 1));
+            speakWordLoop(index);
+        }
+
+        function speakWordLoop(index) {
+            if (!loopEnabled || activeLoopType !== 'single' || activeLoopIndex !== index) {
+                return;
+            }
+
+            var word = vocabData[index];
+            if (!word) return;
+
+            var text = getSpeechText(word);
+            speakVocabText(text, function() {
+                if (loopEnabled && activeLoopType === 'single' && activeLoopIndex === index) {
+                    setTimeout(function() {
+                        speakWordLoop(index);
+                    }, 500);
+                }
+            });
+
+            renderVocabulary();
+            var items = document.querySelectorAll('.vocab-item');
+            items.forEach(function(item) {
+                var idx = parseInt(item.dataset.index);
+                var btn = item.querySelector('.vocab-speak');
+                if (idx === index && loopEnabled && activeLoopType === 'single') {
+                    btn.classList.add('listening');
+                } else {
+                    btn.classList.remove('listening');
+                }
+            });
+        }
+
+        function speakPageVocab() {
+            if (!vocabData || vocabData.length === 0) return;
+
+            if (!loopEnabled) {
+                var start = vocabPage * vocabPerPage;
+                var end = Math.min(start + vocabPerPage, vocabData.length);
+                var pageWords = vocabData.slice(start, end);
+                var texts = [];
+                pageWords.forEach(function(w) {
+                    texts.push(getSpeechText(w));
+                });
+                if (texts.length === 0) return;
+                var fullText = texts.join('。 ');
+                speakVocabText(fullText, function() {});
+                return;
+            }
+
+            activeLoopType = 'page';
+            activeLoopIndex = -1;
+            showToast('🔁 Loop មួយទំព័រ');
+            speakPageLoop();
+        }
+
+        function speakPageLoop() {
+            if (!loopEnabled || activeLoopType !== 'page') {
+                return;
+            }
+
+            if (!vocabData || vocabData.length === 0) return;
+            var start = vocabPage * vocabPerPage;
+            var end = Math.min(start + vocabPerPage, vocabData.length);
+            var pageWords = vocabData.slice(start, end);
+            var texts = [];
+            pageWords.forEach(function(w) {
+                texts.push(getSpeechText(w));
+            });
+            if (texts.length === 0) return;
+            var fullText = texts.join('。 ');
+            speakVocabText(fullText, function() {
+                if (loopEnabled && activeLoopType === 'page') {
+                    setTimeout(function() {
+                        speakPageLoop();
+                    }, 500);
+                }
+            });
+        }
+
+        function speakAllVocab() {
+            if (!vocabData || vocabData.length === 0) return;
+
+            if (!loopEnabled) {
+                var texts = [];
+                vocabData.forEach(function(w) {
+                    texts.push(getSpeechText(w));
+                });
+                if (texts.length === 0) return;
+                var fullText = texts.join('。 ');
+                speakVocabText(fullText, function() {});
+                return;
+            }
+
+            activeLoopType = 'all';
+            activeLoopIndex = -1;
+            showToast('🔁 Loop ទាំងអស់');
+            speakAllLoop();
+        }
+
+        function speakAllLoop() {
+            if (!loopEnabled || activeLoopType !== 'all') {
+                return;
+            }
+
+            if (!vocabData || vocabData.length === 0) return;
+            var texts = [];
+            vocabData.forEach(function(w) {
+                texts.push(getSpeechText(w));
+            });
+            if (texts.length === 0) return;
+            var fullText = texts.join('。 ');
+            speakVocabText(fullText, function() {
+                if (loopEnabled && activeLoopType === 'all') {
+                    setTimeout(function() {
+                        speakAllLoop();
+                    }, 500);
+                }
+            });
+        }
+
+        // ============================================================
+        // 📄 NAVIGATION
+        // ============================================================
+
+        function nextVocabPage() {
+            if (!vocabData || vocabData.length === 0) return;
+            var totalPages = Math.ceil(vocabData.length / vocabPerPage);
+            if (vocabPage < totalPages - 1) {
+                vocabPage++;
+                if (activeLoopType === 'single') {
+                    activeLoopType = '';
+                    activeLoopIndex = -1;
+                }
+                renderVocabulary();
+            }
+        }
+
+        function prevVocabPage() {
+            if (vocabPage > 0) {
+                vocabPage--;
+                if (activeLoopType === 'single') {
+                    activeLoopType = '';
+                    activeLoopIndex = -1;
+                }
+                renderVocabulary();
+            }
+        }
+
+        // ============================================================
+        // 🚀 START
+        // ============================================================
+
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+        }
+
+        try {
+            var saved = localStorage.getItem('useGoogleTTS');
+            if (saved !== null) {
+                useGoogleTTS = saved === 'true';
+            }
+        } catch(e) {}
+
+        var gttsBtn = document.getElementById('toggleGtts');
+        if (gttsBtn) {
+            if (useGoogleTTS) {
+                gttsBtn.className = 'gtts-on';
+            } else {
+                gttsBtn.className = 'gtts-off';
+            }
+        }
+
+        renderVocabulary();
+    </script>
+</body>
+</html>

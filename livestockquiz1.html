@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>កម្មវិធីរៀន</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f4f8;
+            padding: 12px;
+            max-width: 480px;
+            margin: auto;
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(135deg, #38a169, #2f855a);
+            color: #fff;
+            padding: 6px 8px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .header-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            align-items: center;
+        }
+        .header button {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 20px;
+            padding: 6px 2px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            text-align: center;
+            width: 100%;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        .header button:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.03);
+        }
+        .header button:active {
+            transform: scale(0.92);
+        }
+        .header button.active {
+            background: #fff;
+            color: #1a365d;
+            border-color: #fff;
+        }
+        .header button.inactive {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.5);
+            border-color: rgba(255,255,255,0.1);
+        }
+        /* ===== GTTS BUTTON - ON (BLUE) ===== */
+        .header button.gtts-on {
+            background: #2b6cb0;
+            color: #fff;
+            border-color: #2b6cb0;
+        }
+        /* ===== GTTS BUTTON - OFF ===== */
+        .header button.gtts-off {
+            background: rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7);
+            border-color: rgba(255,255,255,0.15);
+        }
+        .header .nav-btn {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .header .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .toast.show { opacity: 1; }
+
+        /* ===== CARD ===== */
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 12px;
+            min-height: 350px;
+        }
+
+        /* ===== PROGRESS ===== */
+        .progress-wrap {
+            background: #e2e8f0;
+            border-radius: 12px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s;
+        }
+        .status {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .status .hidden { display: none; }
+
+        /* ===== QUIZ CONTENT ===== */
+        .question-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .qnum {
+            color: #2b6cb0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .tts-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .tts-btn {
+            background: rgba(43,108,176,0.1);
+            border: 1.5px solid #2b6cb0;
+            border-radius: 30px;
+            padding: 3px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #2b6cb0;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tts-btn:hover {
+            background: #2b6cb0;
+            color: #fff;
+        }
+        .tts-btn.listening {
+            background: #48bb78;
+            color: #fff;
+            border-color: #48bb78;
+            animation: pulse 1s infinite;
+        }
+        .tts-btn.stop-btn {
+            border-color: #e53e3e;
+            color: #e53e3e;
+        }
+        .tts-btn.stop-btn:hover {
+            background: #e53e3e;
+            color: #fff;
+        }
+        .tts-btn.loop-on {
+            background: #38a169;
+            color: #fff;
+            border-color: #38a169;
+        }
+        .tts-btn.loop-on:hover {
+            background: #2f855a;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .qtext {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a202c;
+            line-height: 1.9;
+        }
+        .qtext ruby { font-weight: 600; }
+        .qtext rt {
+            font-size: 11px;
+            font-weight: 400;
+            color: #2b6cb0;
+        }
+        .qkm {
+            font-size: 14px;
+            color: #4a5568;
+            background: #f7fafc;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin: 8px 0 14px 0;
+            border-left: 4px solid #2b6cb0;
+        }
+        .qkm.hidden { display: none; }
+
+        .choice {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            margin: 6px 0;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
+            background: #fff;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .choice:hover {
+            background: #ebf8ff;
+            border-color: #63b3ed;
+        }
+        .choice .km {
+            font-size: 13px;
+            color: #4a5568;
+            display: block;
+            margin-top: 2px;
+        }
+        .choice .km.hidden { display: none; }
+        .choice.correct {
+            background: #c6f6d5;
+            border-color: #48bb78;
+        }
+        .choice.wrong {
+            background: #fed7d7;
+            border-color: #f56565;
+        }
+
+        .feedback {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 12px;
+            font-size: 14px;
+            border-left: 4px solid #2b6cb0;
+        }
+        .feedback strong { color: #2b6cb0; }
+        .feedback .exp { color: #4a5568; margin-top: 6px; }
+        .feedback .km {
+            font-size: 13px;
+            color: #4a5568;
+            display: block;
+            margin-top: 4px;
+        }
+        .feedback .km.hidden { display: none; }
+
+        /* ===== RESULT ===== */
+        .result {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .result h2 { font-size: 28px; color: #1a365d; }
+        .result .score {
+            font-size: 48px;
+            font-weight: 800;
+            color: #2b6cb0;
+        }
+        .result .label { font-size: 16px; color: #4a5568; }
+        .result .pass {
+            color: #48bb78;
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 8px;
+        }
+        .result .fail {
+            color: #f56565;
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 8px;
+        }
+        .btn-reset {
+            background: #2b6cb0;
+            color: #fff;
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .btn-reset:hover { background: #1a365d; }
+        .btn-reset.green { background: #48bb78; }
+        .btn-reset.green:hover { background: #38a169; }
+
+        /* ===== HOME ===== */
+        .home-empty {
+            text-align: center;
+            padding: 40px 0;
+            color: #a0aec0;
+        }
+        .home-empty .icon {
+            font-size: 80px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .hidden { display: none; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 420px) {
+            .header button {
+                font-size: 10px;
+                padding: 4px 2px;
+                height: 28px;
+            }
+            .header .nav-btn { font-size: 12px; }
+            .tts-btn {
+                font-size: 10px;
+                padding: 2px 7px;
+                height: 24px;
+            }
+            .question-top { gap: 4px; }
+        }
+        @media (max-width: 360px) {
+            .header button {
+                font-size: 9px;
+                padding: 3px 1px;
+                height: 26px;
+            }
+            .header .nav-btn { font-size: 11px; }
+            .tts-btn {
+                font-size: 9px;
+                padding: 2px 5px;
+                height: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-grid">
+            <button class="nav-btn" id="prevBtn" onclick="prevQuestion()" disabled>◀</button>
+            <button id="toggleKh" class="active" onclick="toggleKh()">ខ្មែរ</button>
+            <button id="toggleFuri" class="active" onclick="toggleFuri()">ふり</button>
+            <button id="toggleGtts" class="gtts-off" onclick="toggleGtts()">GTTS</button>
+            <button class="nav-btn" id="nextBtn" onclick="nextQuestion()">▶</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">✅</div>
+
+    <!-- ===== PROGRESS ===== -->
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="status" id="statusBar">
+        <span id="qnum">📌 សំណួរ 1/10</span>
+        <span id="qscore">✅ 0</span>
+    </div>
+
+    <!-- ===== CARD ===== -->
+    <div class="card" id="quizCard">
+        <div id="contentArea"></div>
+    </div>
+    <div id="feedbackArea"></div>
+
+    <script>
+        // ============================================================
+        // 📝 QUESTIONS - LIVESTOCK QUIZ 1 (50 Questions)
+        // ============================================================
+
+        const TEST_QUESTIONS = [
+  {
+    id: "Q0001",
+    q: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の１<ruby>年間<rt>ねんかん</rt></ruby>の<ruby>平均乳量<rt>へいきんにゅうりょう</rt></ruby>として、<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាបរិមាណទឹកដោះជាមធ្យមក្នុងមួយឆ្នាំរបស់គោទឹកដោះដែលត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>5,000kg<rt>ごせんキログラム</rt></ruby>', '5,000kg'],
+      ['<ruby>8,500kg<rt>はっせんごひゃくキログラム</rt></ruby>', '8,500kg'],
+      ['<ruby>10,000kg<rt>いちまんキログラム</rt></ruby>', '10,000kg'],
+      ['<ruby>12,000kg<rt>いちまんにせんキログラム</rt></ruby>', '12,000kg']
+    ],
+    ans: 1,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>大部分<rt>だいぶぶん</rt></ruby>はホルスタイン<ruby>種<rt>しゅ</rt></ruby>で、１<ruby>年間<rt>ねんかん</rt></ruby>の<ruby>平均乳量<rt>へいきんにゅうりょう</rt></ruby>は8,500kgを<ruby>超<rt>こ</rt></ruby>えています。',
+    kmExp: 'គោទឹកដោះភាគច្រើននៅប្រទេសជប៉ុនគឺពូជហូលស្តាញ ហើយបរិមាណទឹកដោះជាមធ្យមក្នុងមួយឆ្នាំគឺលើសពី 8,500kg ។'
+  },
+  {
+    id: "Q0002",
+    q: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>分娩間隔<rt>ぶんべんかんかく</rt></ruby>として、<ruby>理想的<rt>りそうてき</rt></ruby>なものはどれか。',
+    km: 'តើមួយណាជាគម្លាតពេលសម្រាលកូនរបស់គោទឹកដោះតាមឧត្តមគតិ?',
+    options: [
+      ['<ruby>280<rt>にひゃくはちじゅう</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '២៨០ ថ្ងៃ'],
+      ['<ruby>365<rt>さんびゃくろくじゅうご</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '៣៦៥ ថ្ងៃ'],
+      ['<ruby>400<rt>よんひゃく</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '៤០០ ថ្ងៃ'],
+      ['<ruby>433<rt>よんひゃくさんじゅうさん</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '៤៣៣ ថ្ងៃ']
+    ],
+    ans: 1,
+    exp: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>分娩<rt>ぶんべん</rt></ruby>の<ruby>間隔<rt>かんかく</rt></ruby>は365<ruby>日<rt>にち</rt></ruby>、つまり１<ruby>年<rt>ねん</rt></ruby>に１<ruby>産<rt>さん</rt></ruby>が<ruby>望<rt>のぞ</rt></ruby>ましいとされています。',
+    kmExp: 'គម្លាតពេលសម្រាលកូនរបស់គោទឹកដោះគឺ ៣៦៥ ថ្ងៃ មានន័យថាសម្រាលកូនមួយដងក្នុងមួយឆ្នាំ (១ ឆ្នាំបានកូន ១) គឺជាការល្អបំផុត។'
+  },
+  {
+    id: "Q0003",
+    q: '<ruby>夏<rt>なつ</rt></ruby>の<ruby>暑<rt>あつ</rt></ruby>い<ruby>時<rt>とき</rt></ruby>の<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>状態<rt>じょうたい</rt></ruby>について、<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាស្ថានភាពត្រឹមត្រូវរបស់គោទឹកដោះនៅពេលក្ដៅក្នុងរដូវក្ដៅ?',
+    options: [
+      ['<ruby>飼料摂取量<rt>しりょうせっしゅりょう</rt></ruby>が<ruby>増加<rt>ぞうか</rt></ruby>し、<ruby>乳量<rt>にゅうりょう</rt></ruby>も<ruby>増加<rt>ぞうか</rt></ruby>する', 'បរិមាណចំណីស៊ីកើនឡើង ហើយបរិមាណទឹកដោះក៏កើនឡើង'],
+      ['<ruby>飼料摂取量<rt>しりょうせっしゅりょう</rt></ruby>が<ruby>減少<rt>げんしょう</rt></ruby>し、<ruby>乳量<rt>にゅうりょう</rt></ruby>も<ruby>低下<rt>ていか</rt></ruby>する', 'បរិមាណចំណីស៊ីថយចុះ ហើយបរិមាណទឹកដោះក៏ថយចុះ'],
+      ['<ruby>飼料摂取量<rt>しりょうせっしゅりょう</rt></ruby>は<ruby>変化<rt>へんか</rt></ruby>せず、<ruby>乳量<rt>にゅうりょう</rt></ruby>だけが<ruby>増加<rt>ぞうか</rt></ruby>する', 'បរិមាណចំណីស៊ីមិនប្រែប្រួល មានតែបរិមាណទឹកដោះកើនឡើង'],
+      ['<ruby>飼料摂取量<rt>しりょうせっしゅりょう</rt></ruby>が<ruby>増加<rt>ぞうか</rt></ruby>し、<ruby>乳量<rt>にゅうりょう</rt></ruby>は<ruby>低下<rt>ていか</rt></ruby>する', 'បរិមាណចំណីស៊ីកើនឡើង ប៉ុន្តែបរិមាណទឹកដោះថយចុះ']
+    ],
+    ans: 1,
+    exp: '<ruby>夏<rt>なつ</rt></ruby>の<ruby>暑<rt>あつ</rt></ruby>い<ruby>時<rt>とき</rt></ruby>には<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>は<ruby>飼料摂取量<rt>しりょうせっしゅりょう</rt></ruby>が<ruby>減少<rt>げんしょう</rt></ruby>し、<ruby>乳量<rt>にゅうりょう</rt></ruby>が<ruby>低下<rt>ていか</rt></ruby>します。<ruby>気温<rt>きおん</rt></ruby>が30℃<ruby>前後<rt>ぜんご</rt></ruby>になると、<ruby>乾物摂取量<rt>かんぶつせっしゅりょう</rt></ruby>と<ruby>乳量<rt>にゅうりょう</rt></ruby>が<ruby>低下<rt>ていか</rt></ruby>します。',
+    kmExp: 'នៅពេលក្ដៅក្នុងរដូវក្ដៅ គោទឹកដោះនឹងថយចុះបរិមាណចំណីដែលស៊ី ហើយបរិមាណទឹកដោះក៏ថយចុះដែរ។ នៅពេលសីតុណ្ហភាពប្រហែល ៣០°C បរិមាណចំណីស្ងួត និងបរិមាណទឹកដោះនឹងថយចុះ។'
+  },
+  {
+    id: "Q0004",
+    q: '<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby>から<ruby>出<rt>で</rt></ruby>る<ruby>糞尿<rt>ふんにょう</rt></ruby>の<ruby>処理<rt>しょり</rt></ruby>について、<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាការចាត់ចែងត្រឹមត្រូវសម្រាប់លាមក និងទឹកនោមដែលចេញពីក្រោលគោ?',
+    options: [
+      ['<ruby>野原<rt>のはら</rt></ruby>に<ruby>放置<rt>ほうち</rt></ruby>する', 'ទុកចោលនៅវាលស្មៅ'],
+      ['<ruby>川<rt>かわ</rt></ruby>に<ruby>流<rt>なが</rt></ruby>す', 'បង្ហូរចូលទន្លេ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しく<ruby>堆肥化処理<rt>たいひかしょり</rt></ruby>をする', 'ធ្វើការកែច្នៃជាជីកំប៉ុសឱ្យបានត្រឹមត្រូវ'],
+      ['<ruby>埋<rt>う</rt></ruby>めて<ruby>処分<rt>しょぶん</rt></ruby>する', 'កប់ចោល']
+    ],
+    ans: 2,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>法律<rt>ほうりつ</rt></ruby>では<ruby>牛糞<rt>ぎゅうふん</rt></ruby>を<ruby>野外<rt>やがい</rt></ruby>で<ruby>堆積<rt>たいせき</rt></ruby>することは<ruby>禁止<rt>きんし</rt></ruby>されており、<ruby>良質<rt>りょうしつ</rt></ruby>の<ruby>堆肥<rt>たいひ</rt></ruby>を<ruby>作<rt>つく</rt></ruby>り、<ruby>草地<rt>そうち</rt></ruby>で<ruby>利用<rt>りよう</rt></ruby>したり、<ruby>畑作農家<rt>はたさくのうか</rt></ruby>や<ruby>稲作農家<rt>いなさくのうか</rt></ruby>に<ruby>供給<rt>きょうきゅう</rt></ruby>することが<ruby>重要<rt>じゅうよう</rt></ruby>です。',
+    kmExp: 'ច្បាប់នៅប្រទេសជប៉ុនហាមឃាត់ការគរលាមកគោទុកនៅទីវាល ដូច្នេះចាំបាច់ត្រូវធ្វើជីកំប៉ុសដែលមានគុណភាពល្អ ហើយប្រើប្រាស់នៅវាលស្មៅ ឬផ្គត់ផ្គង់ដល់កសិករដាំដំណាំ និងកសិករដាំស្រូវ។'
+  },
+  {
+    id: "Q0005",
+    q: '<ruby>日本<rt>にほん</rt></ruby>で<ruby>飼<rt>か</rt></ruby>われている<ruby>肉用牛<rt>にくようぎゅう</rt></ruby>の<ruby>種類<rt>しゅるい</rt></ruby>について、<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាប្រភេទគោសាច់ដែលចិញ្ចឹមនៅប្រទេសជប៉ុនដែលត្រឹមត្រូវ?',
+    options: [
+      ['<ruby>黒毛和種<rt>くろげわしゅ</rt></ruby>だけである', 'មានតែពូជគោខ្មៅ (黑毛和種) ប៉ុណ្ណោះ'],
+      ['<ruby>黒毛和種<rt>くろげわしゅ</rt></ruby>、<ruby>乳用種去勢牛<rt>にゅうようしゅきょせいぎゅう</rt></ruby>、<ruby>交雑種<rt>こうざつしゅ</rt></ruby>の３<ruby>種<rt>しゅ</rt></ruby>がある', 'មាន ៣ ប្រភេទគឺ ៖ ពូជគោខ្មៅជប៉ុន គោពូជទឹកដោះគ្រៀវ និងពូជកាត់ចម្រុះ'],
+      ['<ruby>乳用種去勢牛<rt>にゅうようしゅきょせいぎゅう</rt></ruby>だけである', 'មានតែគោពូជទឹកដោះគ្រៀវប៉ុណ្ណោះ'],
+      ['<ruby>交雑種<rt>こうざつしゅ</rt></ruby>だけである', 'មានតែពូជកាត់ចម្រុះប៉ុណ្ណោះ']
+    ],
+    ans: 1,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>肉用牛<rt>にくようぎゅう</rt></ruby>には、<ruby>黒毛和種<rt>くろげわしゅ</rt></ruby>（<ruby>和牛<rt>わぎゅう</rt></ruby>）の<ruby>他<rt>ほか</rt></ruby>に、<ruby>乳用種去勢牛<rt>にゅうようしゅきょせいぎゅう</rt></ruby>（ホルスタイン）および<ruby>黒毛和種<rt>くろげわしゅ</rt></ruby>と<ruby>乳用種<rt>にゅうようしゅ</rt></ruby>との<ruby>交雑種<rt>こうざつしゅ</rt></ruby>（F1）の３<ruby>種<rt>しゅ</rt></ruby>があります。',
+    kmExp: 'គោសាច់នៅប្រទេសជប៉ុនមាន ៣ ប្រភេទគឺ ៖ ពូជគោខ្មៅជប៉ុន (和牛), គោពូជទឹកដោះគ្រៀវ (ហូលស្តាញ) និងពូជកាត់ចម្រុះរវាងពូជគោខ្មៅនិងពូជទឹកដោះ (F1) ។'
+  },
+  {
+    id: "Q0006",
+    q: '<ruby>黒毛和種<rt>くろげわしゅ</rt></ruby>の<ruby>肥育経営<rt>ひいくけいえい</rt></ruby>では、<ruby>何<rt>なん</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby><ruby>前後<rt>ぜんご</rt></ruby>の<ruby>牛<rt>うし</rt></ruby>を<ruby>市場<rt>しじょう</rt></ruby>で<ruby>購入<rt>こうにゅう</rt></ruby>して<ruby>肥育<rt>ひいく</rt></ruby>しますか。',
+    km: 'តើក្នុងការចិញ្ចឹមបំប៉នគោពូជខ្មៅ (黒毛和種) គេត្រូវទិញកូនគោអាយុប៉ុន្មានខែពីទីផ្សារដើម្បីយកមកបំប៉នយកសាច់?',
+    options: [
+      ['<ruby>５<rt>ご</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby><ruby>前後<rt>ぜんご</rt></ruby>', 'អាយុប្រហែល ៥ ខែ'],
+      ['<ruby>１０<rt>じゅう</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby><ruby>前後<rt>ぜんご</rt></ruby>', 'អាយុប្រហែល ១០ ខែ'],
+      ['<ruby>２０<rt>にじゅう</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby><ruby>前後<rt>ぜんご</rt></ruby>', 'អាយុប្រហែល ២០ ខែ'],
+      ['<ruby>３０<rt>さんじゅう</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby><ruby>前後<rt>ぜんご</rt></ruby>', 'អាយុប្រហែល ៣០ ខែ']
+    ],
+    ans: 1,
+    exp: '<ruby>黒毛和種<rt>くろげわしゅ</rt></ruby>の<ruby>肥育経営<rt>ひいくけいえい</rt></ruby>では、１０か<ruby>月齢<rt>げつれい</rt></ruby><ruby>前後<rt>ぜんご</rt></ruby>の<ruby>牛<rt>うし</rt></ruby>を<ruby>市場<rt>しじょう</rt></ruby>で<ruby>購入<rt>こうにゅう</rt></ruby>し、３０か<ruby>月齢<rt>げつれい</rt></ruby><ruby>前後<rt>ぜんご</rt></ruby>まで<ruby>肥育<rt>ひいく</rt></ruby>します。',
+    kmExp: 'ក្នុងការចិញ្ចឹមបំប៉នគោពូជខ្មៅ (黒毛和種) គេត្រូវទិញកូនគោអាយុប្រហែល ១០ ខែពីទីផ្សារ ហើយចិញ្ចឹមបំប៉នរហូតដល់អាយុប្រហែល ៣០ ខែ។'
+  },
+  {
+    id: "Q0007",
+    q: '<ruby>肥育牛<rt>ひいくぎゅう</rt></ruby>では<ruby>濃厚飼料<rt>のうこうしりょう</rt></ruby>と<ruby>粗飼料<rt>そしりょう</rt></ruby>の<ruby>給与割合<rt>きゅうよわりあい</rt></ruby>について、<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាត្រឹមត្រូវអំពីសមាមាត្រនៃការផ្តល់ចំណីប្រមូលផ្តុំ និងចំណីរដុបសម្រាប់គោបំប៉នយកសាច់ (肥育牛)?',
+    options: [
+      ['<ruby>粗飼料<rt>そしりょう</rt></ruby>の<ruby>割合<rt>わりあい</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い', 'សមាមាត្រចំណីរដុបខ្ពស់ជាង'],
+      ['<ruby>濃厚飼料<rt>のうこうしりょう</rt></ruby>の<ruby>割合<rt>わりあい</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い', 'សមាមាត្រចំណីប្រមូលផ្តុំខ្ពស់ជាង'],
+      ['<ruby>両方<rt>りょうほう</rt></ruby>とも<ruby>同<rt>おな</rt></ruby>じ<ruby>割合<rt>わりあい</rt></ruby>', 'ទាំងពីរមានសមាមាត្រស្មើគ្នា'],
+      ['<ruby>飼料<rt>しりょう</rt></ruby>は<ruby>与<rt>あた</rt></ruby>えられない', 'មិនត្រូវបានផ្តល់ចំណីទេ']
+    ],
+    ans: 1,
+    exp: '<ruby>肥育牛<rt>ひいくぎゅう</rt></ruby>では<ruby>配合飼料<rt>はいごうしりょう</rt></ruby>の<ruby>割合<rt>わりあい</rt></ruby>が<ruby>高<rt>たか</rt></ruby>くなります。<ruby>濃厚飼料<rt>のうこうしりょう</rt></ruby>（<ruby>配合飼料<rt>はいごうしりょう</rt></ruby>）より<ruby>粗飼料<rt>そしりょう</rt></ruby>の<ruby>給与割合<rt>きゅうよわりあい</rt></ruby>は<ruby>低<rt>ひく</rt></ruby>いです。',
+    kmExp: 'សម្រាប់គោបំប៉នយកសាច់ (肥育牛) សមាមាត្រនៃចំណីប្រមូលផ្តុំ (ចំណីផ្សំ) គឺខ្ពស់ជាង ចំណែកចំណីរដុបមានសមាមាត្រទាបជាង។'
+  },
+  {
+    id: "Q0008",
+    q: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>肥育豚<rt>ひいくとん</rt></ruby>は<ruby>発育<rt>はついく</rt></ruby>が<ruby>早<rt>はや</rt></ruby>く、５～６か<ruby>月<rt>げつ</rt></ruby>で<ruby>体重<rt>たいじゅう</rt></ruby>はどのくらいになりますか。',
+    km: 'ជ្រូកសាច់ (肥育豚) នៅប្រទេសជប៉ុនលូតលាស់លឿន តើទម្ងន់ឡើងដល់ប្រហែលប៉ុន្មានក្នុងរយៈពេល ៥-៦ ខែ?',
+    options: [
+      ['<ruby>50<rt>ごじゅう</rt></ruby>～<ruby>60kg<rt>ろくじゅうキログラム</rt></ruby>', '៥០-៦០ គីឡូក្រាម'],
+      ['<ruby>100<rt>ひゃく</rt></ruby>～<ruby>110kg<rt>ひゃくじゅうキログラム</rt></ruby>', '១០០-១១០ គីឡូក្រាម'],
+      ['<ruby>150<rt>ひゃくごじゅう</rt></ruby>～<ruby>160kg<rt>ろくじゅうキログラム</rt></ruby>', '១៥០-១៦០ គីឡូក្រាម'],
+      ['<ruby>200<rt>にひゃく</rt></ruby>～<ruby>220kg<rt>にひゃくにじゅうキログラム</rt></ruby>', '២០០-២២០ គីឡូក្រាម']
+    ],
+    ans: 1,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>肥育豚<rt>ひいくとん</rt></ruby>は<ruby>発育<rt>はついく</rt></ruby>が<ruby>早<rt>はや</rt></ruby>く、５～６か<ruby>月<rt>げつ</rt></ruby>で100～110kgの<ruby>体重<rt>たいじゅう</rt></ruby>になります。',
+    kmExp: 'ជ្រូកសាច់នៅប្រទេសជប៉ុនលូតលាស់លឿន ហើយមានទម្ងន់ដល់ ១០០-១១០ គីឡូក្រាម ក្នុងរយៈពេល ៥-៦ ខែ។'
+  },
+  {
+    id: "Q0009",
+    q: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>母豚<rt>ぼとん</rt></ruby>の１<ruby>回<rt>かい</rt></ruby>の<ruby>産子数<rt>さんしすう</rt></ruby>は<ruby>平均<rt>へいきん</rt></ruby>どのくらいですか。',
+    km: 'តើចំនួនកូនជ្រូកជាមធ្យមក្នុងមួយលើកនៃការសម្រាលរបស់មេជ្រូកនៅប្រទេសជប៉ុនគឺប៉ុន្មាន?',
+    options: [
+      ['<ruby>５<rt>ご</rt></ruby> <ruby>頭<rt>とう</rt></ruby>', '៥ ក្បាល'],
+      ['<ruby>１０<rt>じゅう</rt></ruby>～<ruby>１５<rt>じゅうご</rt></ruby> <ruby>頭<rt>とう</rt></ruby>', '១០-១៥ ក្បាល'],
+      ['<ruby>２０<rt>にじゅう</rt></ruby>～<ruby>２５<rt>にじゅうご</rt></ruby> <ruby>頭<rt>とう</rt></ruby>', '២០-២៥ ក្បាល'],
+      ['<ruby>３０<rt>さんじゅう</rt></ruby> <ruby>頭<rt>とう</rt></ruby>', '៣០ ក្បាល']
+    ],
+    ans: 1,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>母豚<rt>ぼとん</rt></ruby>の１<ruby>回<rt>かい</rt></ruby>の<ruby>産子数<rt>さんしすう</rt></ruby>は10～15<ruby>頭<rt>とう</rt></ruby>です。',
+    kmExp: 'ចំនួនកូនជ្រូកជាមធ្យមក្នុងមួយលើកនៃការសម្រាលរបស់មេជ្រូកនៅប្រទេសជប៉ុនគឺ ១០-១៥ ក្បាល។'
+  },
+  {
+    id: "Q0010",
+    q: '<ruby>分娩<rt>ぶんべん</rt></ruby>した<ruby>母豚<rt>ぼとん</rt></ruby>は、<ruby>生<rt>う</rt></ruby>まれた<ruby>子豚<rt>こぶた</rt></ruby>と<ruby>何週間<rt>なんしゅうかん</rt></ruby><ruby>一緒<rt>いっしょ</rt></ruby>に<ruby>飼<rt>か</rt></ruby>いますか。',
+    km: 'មេជ្រូកដែលសម្រាលកូនរួច ត្រូវចិញ្ចឹមបំបៅដោះជាមួយកូនជ្រូករយៈពេលប៉ុន្មានសប្តាហ៍?',
+    options: [
+      ['<ruby>１<rt>いっ</rt></ruby>～<ruby>２<rt>に</rt></ruby> <ruby>週間<rt>しゅうかん</rt></ruby>', '១-២ សប្តាហ៍'],
+      ['<ruby>３<rt>さん</rt></ruby>～<ruby>４<rt>よん</rt></ruby> <ruby>週間<rt>しゅうかん</rt></ruby>', '៣-៤ សប្តាហ៍'],
+      ['<ruby>２<rt>に</rt></ruby> <ruby>ヶ月<rt>かげつ</rt></ruby>', '២ ខែ'],
+      ['<ruby>６<rt>ろく</rt></ruby> <ruby>ヶ月<rt>かげつ</rt></ruby>', '៦ ខែ']
+    ],
+    ans: 1,
+    exp: '<ruby>子豚<rt>こぶた</rt></ruby>の<ruby>哺乳期間<rt>ほにゅうきかん</rt></ruby>は３～４<ruby>週間<rt>しゅうかん</rt></ruby>です。<ruby>分娩<rt>ぶんべん</rt></ruby>した<ruby>母豚<rt>ぼとん</rt></ruby>は<ruby>生<rt>う</rt></ruby>まれた<ruby>子豚<rt>こぶた</rt></ruby>と３～４<ruby>週間<rt>しゅうかん</rt></ruby><ruby>一緒<rt>いっしょ</rt></ruby>に<ruby>飼<rt>か</rt></ruby>います。',
+    kmExp: 'រយៈពេលបំបៅដោះកូនជ្រូកគឺ ៣-៤ សប្តាហ៍។ ដូច្នេះមេជ្រូកត្រូវនៅចិញ្ចឹមជាមួយកូនជ្រូករយៈពេល ៣-៤ សប្តាហ៍ មុនពេលផ្តាច់ដោះ។'
+  },
+  {
+    id: "Q0011",
+    q: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>母豚<rt>ぼとん</rt></ruby>は２<ruby>年間<rt>ねんかん</rt></ruby>に４～５<ruby>回<rt>かい</rt></ruby><ruby>妊娠<rt>にんしん</rt></ruby>・<ruby>出産<rt>しゅっさん</rt></ruby>させることができるか。',
+    km: 'តើមេជ្រូកនៅប្រទេសជប៉ុនអាចពពោះ និងសម្រាលកូនបាន ៤-៥ ដងក្នុងរយៈពេល ២ ឆ្នាំដែរឬទេ?',
+    options: [
+      ['<ruby>できる<rt>できる</rt></ruby>', 'អាចបាន'],
+      ['<ruby>できない<rt>できない</rt></ruby>', 'មិនអាចទេ'],
+      ['<ruby>１<rt>いっ</rt></ruby>～<ruby>２<rt>に</rt></ruby><ruby>回<rt>かい</rt></ruby>しかできない', 'បានតែ ១-២ ដងប៉ុណ្ណោះ'],
+      ['<ruby>６<rt>ろく</rt></ruby>～<ruby>７<rt>なな</rt></ruby><ruby>回<rt>かい</rt></ruby>できる', 'អាចបាន ៦-៧ ដង']
+    ],
+    ans: 0,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>母豚<rt>ぼとん</rt></ruby>は<ruby>健康<rt>けんこう</rt></ruby>に<ruby>管理<rt>かんり</rt></ruby>されれば、２<ruby>年間<rt>ねんかん</rt></ruby>に４～５<ruby>回<rt>かい</rt></ruby><ruby>妊娠<rt>にんしん</rt></ruby>・<ruby>出産<rt>しゅっさん</rt></ruby>させることができます。',
+    kmExp: 'មេជ្រូកនៅប្រទេសជប៉ុន ប្រសិនបើគ្រប់គ្រងសុខភាពបានល្អ អាចពពោះ និងសម្រាលកូនបាន ៤-៥ ដងក្នុងរយៈពេល ២ ឆ្នាំ (ប្រហែល ២ ដងជាងក្នុង ១ ឆ្នាំ)។'
+  },
+  {
+    id: "Q0012",
+    q: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>養豚場<rt>ようとんじょう</rt></ruby>は<ruby>病気<rt>びょうき</rt></ruby>が<ruby>少<rt>すく</rt></ruby>ないため、<ruby>予防接種<rt>よぼうせっしゅ</rt></ruby>の<ruby>必要<rt>ひつよう</rt></ruby>はない。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "កសិដ្ឋានចិញ្ចឹមជ្រូកនៅប្រទេសជប៉ុនមានជំងឺតិចតួច ដូច្នេះមិនចាំបាច់ចាក់វ៉ាក់សាំងការពារទេ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>時<rt>とき</rt></ruby>による', 'អាស្រ័យលើកាលៈទេសៈ'],
+      ['<ruby>わからない', 'មិនដឹង']
+    ],
+    ans: 1,
+    exp: '<ruby>養豚場<rt>ようとんじょう</rt></ruby>には<ruby>各種<rt>かくしゅ</rt></ruby>の<ruby>病気<rt>びょうき</rt></ruby>が<ruby>存在<rt>そんざい</rt></ruby>し、<ruby>適切<rt>てきせつ</rt></ruby>な<ruby>予防注射<rt>よぼうちゅうしゃ</rt></ruby>が<ruby>必要<rt>ひつよう</rt></ruby>です。',
+    kmExp: 'នៅក្នុងកសិដ្ឋានចិញ្ចឹមជ្រូកមានជំងឺជាច្រើនប្រភេទ ដូច្នេះការចាក់វ៉ាក់សាំងការពារឱ្យបានត្រឹមត្រូវគឺពិតជាចាំបាច់។'
+  },
+  {
+    id: "Q0013",
+    q: 'ひなの<ruby>発育<rt>はついく</rt></ruby>は、<ruby>幼すう<rt>ようすう</rt></ruby>、<ruby>中すう<rt>ちゅうすう</rt></ruby>、<ruby>大すう<rt>だいすう</rt></ruby>、<ruby>成鶏<rt>せいけい</rt></ruby>の４<ruby>段階<rt>だんかい</rt></ruby>に<ruby>分<rt>わ</rt></ruby>けられる。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ការលូតលាស់របស់កូនមាន់ចែកចេញជា ៤ ដំណាក់កាលគឺ កូនមាន់បឋម មាន់ជំទង់ មាន់ជំទង់ធំ និងមាន់ពេញវ័យ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>３<rt>さん</rt></ruby><ruby>段階<rt>だんかい</rt></ruby>だ', 'មាន ៣ ដំណាក់កាល'],
+      ['<ruby>５<rt>ご</rt></ruby><ruby>段階<rt>だんかい</rt></ruby>だ', 'មាន ៥ ដំណាក់កាល']
+    ],
+    ans: 0,
+    exp: '<ruby>ひなの<rt>ひなの</rt></ruby><ruby>発育<rt>はついく</rt></ruby>は、<ruby>幼すう<rt>ようすう</rt></ruby><ruby>期<rt>き</rt></ruby>（０～４<ruby>週齢<rt>しゅうれい</rt></ruby>）、<ruby>中すう<rt>ちゅうすう</rt></ruby><ruby>期<rt>き</rt></ruby>（４～１０<ruby>週齢<rt>しゅうれい</rt></ruby>）、<ruby>大すう<rt>だいすう</rt></ruby><ruby>期<rt>き</rt></ruby>（１０～２０<ruby>週齢<rt>しゅうれい</rt></ruby>）、<ruby>成鶏<rt>せいけい</rt></ruby><ruby>期<rt>き</rt></ruby>の４<ruby>段階<rt>だんかい</rt></ruby>に<ruby>分<rt>わ</rt></ruby>けられます。',
+    kmExp: 'ការលូតលាស់របស់កូនមាន់ចែកចេញជា ៤ ដំណាក់កាលគឺ ៖ ដំណាក់កាលកូនមាន់បឋម (អាយុ ០-៤ សប្តាហ៍), ដំណាក់កាលមាន់ជំទង់ (អាយុ ៤-១០ សប្តាហ៍), ដំណាក់កាលមាន់ជំទង់ធំ (អាយុ ១០-២០ សប្តាហ៍), និងដំណាក់កាលមាន់ពេញវ័យ។'
+  },
+  {
+    id: "Q0014",
+    q: '<ruby>産卵鶏<rt>さんらんけい</rt></ruby>の<ruby>飼料<rt>しりょう</rt></ruby>としては<ruby>配合飼料<rt>はいごうしりょう</rt></ruby>が<ruby>最<rt>もっと</rt></ruby>も<ruby>多<rt>おお</rt></ruby>く<ruby>利用<rt>りよう</rt></ruby>される。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ចំណីផ្សំស្រេច (配合飼料) ត្រូវបានប្រើប្រាស់ច្រើនជាងគេសម្រាប់មាន់ពង" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>粗飼料<rt>そしりょう</rt></ruby>が<ruby>最<rt>もっと</rt></ruby>も<ruby>多<rt>おお</rt></ruby>い', 'ចំណីរដុបច្រើនជាងគេ'],
+      ['<ruby>野菜<rt>やさい</rt></ruby>が<ruby>最<rt>もっと</rt></ruby>も<ruby>多<rt>おお</rt></ruby>い', 'បន្លែច្រើនជាងគេ']
+    ],
+    ans: 0,
+    exp: '<ruby>採卵鶏<rt>さいらんけい</rt></ruby>の<ruby>飼育<rt>しいく</rt></ruby>では、<ruby>市販<rt>しはん</rt></ruby>の<ruby>配合飼料<rt>はいごうしりょう</rt></ruby>が<ruby>一般的<rt>いっぱんてき</rt></ruby>に<ruby>給与<rt>きゅうよ</rt></ruby>されています。',
+    kmExp: 'នៅក្នុងការចិញ្ចឹមមាន់ពង ចំណីផ្សំស្រេច (配合飼料) ដែលមានលក់លើទីផ្សារត្រូវបានផ្ដល់ឱ្យស៊ីជាទូទៅ។'
+  },
+  {
+    id: "Q0015",
+    q: '<ruby>鳥<rt>とり</rt></ruby>インフルエンザに<ruby>感染<rt>かんせん</rt></ruby>しても<ruby>鶏<rt>にわとり</rt></ruby>は<ruby>死<rt>し</rt></ruby>なない。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "មាន់មិនងាប់ទេ ទោះបីឆ្លងមេរោគផ្ដាសាយបក្សីក៏ដោយ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>必<rt>かなら</rt></ruby>ず<ruby>死<rt>し</rt></ruby>ぬ', 'ងាប់ជាក់ជាមិនខាន'],
+      ['<ruby>全然<rt>ぜんぜん</rt></ruby><ruby>関係<rt>かんけい</rt></ruby>ない', 'មិនពាក់ព័ន្ធទាល់តែសោះ']
+    ],
+    ans: 1,
+    exp: '<ruby>高病原性<rt>こうびょうげんせい</rt></ruby>の<ruby>ウイルス<rt>ういるす</rt></ruby>に<ruby>感染<rt>かんせん</rt></ruby>すると１<ruby>週間<rt>しゅうかん</rt></ruby><ruby>以内<rt>いない</rt></ruby>に<ruby>死亡<rt>しぼう</rt></ruby>する<ruby>場合<rt>ばあい</rt></ruby>があります。',
+    kmExp: 'ប្រសិនបើឆ្លងមេរោគផ្ដាសាយបក្សីប្រភេទកាចសាហាវ (高病原性) មាន់អាចងាប់យ៉ាងលឿនក្នុងរយៈពេល ១ សប្តាហ៍។'
+  },
+  {
+    id: "Q0016",
+    q: 'ブロイラーの<ruby>体重<rt>たいじゅう</rt></ruby>は７<ruby>週齢<rt>しゅうれい</rt></ruby>の<ruby>雄<rt>おす</rt></ruby>で<ruby>約<rt>やく</rt></ruby>５kgである。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ទម្ងន់របស់មាន់ឈ្មោល (ពូជមាន់សាច់ប្រូយឡែរ) នៅអាយុ ៧ សប្តាហ៍គឺប្រហែល ៥ គីឡូក្រាម" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>約<rt>やく</rt></ruby>3.3kgである', 'គឺប្រហែល 3.3 គីឡូក្រាម'],
+      ['<ruby>約<rt>やく</rt></ruby>7kgである', 'គឺប្រហែល 7 គីឡូក្រាម']
+    ],
+    ans: 1,
+    exp: 'ブロイラーの<ruby>雄<rt>おす</rt></ruby>は７<ruby>週齢<rt>しゅうれい</rt></ruby>で<ruby>約<rt>やく</rt></ruby>3.3kgになり、<ruby>約<rt>やく</rt></ruby>5kgではありません。',
+    kmExp: 'មាន់ឈ្មោលពូជប្រូយឡែរ នៅអាយុ ៧ សប្តាហ៍មានទម្ងន់ប្រហែល ៣.៣ គីឡូក្រាម មិនមែន ៥ គីឡូក្រាមទេ។'
+  },
+  {
+    id: "Q0017",
+    q: '<ruby>暑<rt>あつ</rt></ruby>くなると<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>呼吸数<rt>こきゅうすう</rt></ruby>は<ruby>増<rt>ふ</rt></ruby>える。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "នៅពេលអាកាសធាតុក្ដៅ ចំនួនដង្ហើមរបស់គោទឹកដោះកើនឡើង" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>減<rt>へ</rt></ruby>る', 'ថយចុះ'],
+      ['<ruby>変<rt>か</rt></ruby>わらない', 'មិនប្រែប្រួល']
+    ],
+    ans: 0,
+    exp: '<ruby>夏<rt>なつ</rt></ruby>の<ruby>暑<rt>あつ</rt></ruby>い<ruby>時<rt>とき</rt></ruby>に<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>は<ruby>呼吸数<rt>こきゅうすう</rt></ruby>を<ruby>多<rt>おお</rt></ruby>くして<ruby>水<rt>みず</rt></ruby>を<ruby>蒸発<rt>じょうはつ</rt></ruby>させ、<ruby>体温<rt>たいおん</rt></ruby>の<ruby>上昇<rt>じょうしょう</rt></ruby>を<ruby>防<rt>ふせ</rt></ruby>いでいます。',
+    kmExp: 'នៅពេលក្ដៅក្នុងរដូវក្ដៅ គោទឹកដោះដកដង្ហើមញាប់ជាងមុនដើម្បីបញ្ចេញចំហាយទឹក និងការពារការកើនឡើងកម្ដៅរាងកាយ។'
+  },
+  {
+    id: "Q0018",
+    q: 'フリーストール<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby>のなかにはベッドはないが、フリーパーン<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby>には<ruby>個別<rt>こべつ</rt></ruby>に<ruby>寝<rt>ね</rt></ruby>られるベッドがある。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ក្រោលគោហ្វ្រីស្តល (Freestall) គ្មានកន្លែងដេកដាច់ដោយឡែកទេ រីឯក្រោលគោហ្វ្រីប៊ន (Freebarn) មានកន្លែងដេកដាច់ដោយឡែក" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>逆<rt>ぎゃく</rt></ruby>である', 'ផ្ទុយគ្នា (ហ្វ្រីស្តលមានកន្លែងដេកដាច់ ហ្វ្រីប៊នគ្មានកន្លែងដេកដាច់)'],
+      ['<ruby>両方<rt>りょうほう</rt></ruby>ともベッドがある', 'ទាំងពីរមានកន្លែងដេកដាច់ដោយឡែក']
+    ],
+    ans: 1,
+    exp: '<ruby>個別<rt>こべつ</rt></ruby>のベッドがあるのはフリーストール<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby>で、フリーパーン<ruby>牛舎<rt>ぎゅうしゃ</rt></ruby>にはベッドはありません。<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>逆<rt>ぎゃく</rt></ruby>です。',
+    kmExp: 'កន្លែងដេកដាច់ដោយឡែកនីមួយៗមាននៅក្នុងក្រោលគោហ្វ្រីស្តល (Freestall) ចំណែកក្រោលគោហ្វ្រីប៊ន (Freebarn) ជាក្រោលលែងរួមគ្មានកន្លែងដេកចែកបន្ទប់ទេ។ សេចក្តីថ្លែងនេះផ្ទុយគ្នា។'
+  },
+  {
+    id: "Q0019",
+    q: '<ruby>牛<rt>うし</rt></ruby>は<ruby>人間<rt>にんげん</rt></ruby>と<ruby>同<rt>おな</rt></ruby>じように<ruby>胃<rt>い</rt></ruby>は１つである。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "គោមានក្រពះ ១ ដូចមនុស្សដែរ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>３<rt>さん</rt></ruby>つである', 'មាន ៣'],
+      ['<ruby>４<rt>よん</rt></ruby>つである', 'មាន ៤']
+    ],
+    ans: 1,
+    exp: '<ruby>牛<rt>うし</rt></ruby>は４つの<ruby>胃<rt>い</rt></ruby>を<ruby>持<rt>も</rt></ruby>っています（<ruby>第１胃<rt>だいいちい</rt></ruby>～<ruby>第４胃<rt>だいよんい</rt></ruby>）。',
+    kmExp: 'គោជាសត្វរំពាអាហារដែលមានក្រពះ ៤ ផ្នែក (ក្រពះទី ១ ដល់ទី ៤) មិនមែនមានក្រពះតែ ១ ដូចមនុស្សទេ។'
+  },
+  {
+    id: "Q0020",
+    q: '<ruby>肥育牛<rt>ひいくぎゅう</rt></ruby>の「<ruby>食<rt>く</rt></ruby>い<ruby>止<rt>ど</rt></ruby>まり」は<ruby>粗飼料<rt>そしりょう</rt></ruby>の<ruby>食<rt>た</rt></ruby>べ<ruby>過<rt>す</rt></ruby>ぎで<ruby>起<rt>お</rt></ruby>こる。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "អាការៈឈប់ស៊ីចំណី (食い止まり) របស់គោបំប៉នសាច់ កើតឡើងដោយសារការស៊ីចំណីរដុបច្រើនពេក" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>配合飼料<rt>はいごうしりょう</rt></ruby>の<ruby>多給<rt>たきゅう</rt></ruby>で<ruby>起<rt>お</rt></ruby>こる', 'កើតឡើងដោយសារការផ្ដល់ចំណីផ្សំច្រើនពេក'],
+      ['<ruby>水<rt>みず</rt></ruby>の<ruby>飲<rt>の</rt></ruby>み<ruby>過<rt>す</rt></ruby>ぎで<ruby>起<rt>お</rt></ruby>こる', 'កើតឡើងដោយសារការផឹកទឹកច្រើនពេក']
+    ],
+    ans: 1,
+    exp: '<ruby>食<rt>く</rt></ruby>い<ruby>止<rt>ど</rt></ruby>まりは、<ruby>穀類<rt>こくるい</rt></ruby>を<ruby>中心<rt>ちゅうしん</rt></ruby>とした<ruby>配合飼料<rt>はいごうしりょう</rt></ruby>の<ruby>多給<rt>たきゅう</rt></ruby>で<ruby>起<rt>お</rt></ruby>こります。<ruby>粗飼料<rt>そしりょう</rt></ruby>の<ruby>食<rt>た</rt></ruby>べ<ruby>過<rt>す</rt></ruby>ぎではありません。',
+    kmExp: 'អាការៈឈប់ស៊ីចំណី (食い止まり) កើតឡើងដោយសារការផ្ដល់ចំណីផ្សំប្រមូលផ្ដុំ (ដែលសម្បូរគ្រាប់ធញ្ញជាតិ) ច្រើនជ្រុល មិនមែនបណ្ដាលមកពីចំណីរដុបទេ។'
+  },
+  {
+    id: "Q0021",
+    q: '<ruby>肉用鶏<rt>にくようけい</rt></ruby>（ブロイラー）の<ruby>発育<rt>はついく</rt></ruby>は<ruby>採卵鶏<rt>さいらんけい</rt></ruby>よりも<ruby>遅<rt>おそ</rt></ruby>い。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ការលូតលាស់របស់មាន់សាច់ (ប្រូយឡែរ) យឺតជាងមាន់ពង" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>同<rt>おな</rt></ruby>じくらいだ', 'ប្រហាក់ប្រហែលគ្នា'],
+      ['<ruby>全然<rt>ぜんぜん</rt></ruby><ruby>違<rt>ちが</rt></ruby>う', 'ខុសគ្នាទាំងស្រុង']
+    ],
+    ans: 1,
+    exp: 'ブロイラーの<ruby>特徴<rt>とくちょう</rt></ruby>は<ruby>採卵鶏<rt>さいらんけい</rt></ruby>よりも<ruby>発育速度<rt>はついくそくど</rt></ruby>が<ruby>早<rt>はや</rt></ruby>いことです。<ruby>遅<rt>おそ</rt></ruby>いわけではありません。',
+    kmExp: 'លក្ខណៈពិសេសរបស់មាន់សាច់ប្រូយឡែរ គឺលូតលាស់លឿនខ្លាំងជាងមាន់ពង មិនមែនយឺតជាងទេ។'
+  },
+  {
+    id: "Q0022",
+    q: '<ruby>乳房炎<rt>にゅうぼうえん</rt></ruby>の<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>では<ruby>体細胞数<rt>たいさいぼうすう</rt></ruby>が<ruby>減少<rt>げんしょう</rt></ruby>する。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "គោទឹកដោះដែលមានជំងឺរលាកដោះ (乳房炎) មានចំនួនកោសិកាក្នុងទឹកដោះថយចុះ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>増加<rt>ぞうか</rt></ruby>する', 'កើនឡើង'],
+      ['<ruby>変<rt>か</rt></ruby>わらない', 'មិនប្រែប្រួល']
+    ],
+    ans: 1,
+    exp: '<ruby>乳房炎<rt>にゅうぼうえん</rt></ruby>の<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>では<ruby>体細胞数<rt>たいさいぼうすう</rt></ruby>が<ruby>増加<rt>ぞうか</rt></ruby>します。<ruby>減少<rt>げんしょう</rt></ruby>するわけではありません。',
+    kmExp: 'គោទឹកដោះដែលមានជំងឺរលាកដោះ ចំនួនកោសិការាងកាយ (SCC) ក្នុងទឹកដោះនឹងកើនឡើងខ្ពស់ មិនមែនថយចុះទេ។'
+  },
+  {
+    id: "Q0023",
+    q: '<ruby>分娩<rt>ぶんべん</rt></ruby>後の<ruby>母牛<rt>ぼぎゅう</rt></ruby>は<ruby>平均<rt>へいきん</rt></ruby>して21<ruby>日<rt>にち</rt></ruby><ruby>毎<rt>ごと</rt></ruby>に<ruby>発情<rt>はつじょう</rt></ruby>をくり<ruby>返<rt>かえ</rt></ruby>します。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "មេគោក្រោយសម្រាលកូនរួច ជាមធ្យមនឹងមានការឡើងកម្ដៅ (ចង់ឈ្មោល) រៀងរាល់ ២១ ថ្ងៃម្ដង" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>３０<rt>さんじゅう</rt></ruby><ruby>日<rt>にち</rt></ruby><ruby>毎<rt>ごと</rt></ruby>だ', 'រៀងរាល់ ៣០ ថ្ងៃ'],
+      ['<ruby>１４<rt>じゅうよん</rt></ruby><ruby>日<rt>にち</rt></ruby><ruby>毎<rt>ごと</rt></ruby>だ', 'រៀងរាល់ ១៤ ថ្ងៃ']
+    ],
+    ans: 0,
+    exp: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>発情周期<rt>はつじょうしゅうき</rt></ruby>は<ruby>平均<rt>へいきん</rt></ruby>21<ruby>日<rt>にち</rt></ruby>です。<ruby>分娩<rt>ぶんべん</rt></ruby>後も<ruby>同<rt>おな</rt></ruby>じです。',
+    kmExp: 'វដ្តនៃការឡើងកម្ដៅ (ចង់ឈ្មោល) របស់គោទឹកដោះជាមធ្យមគឺ ២១ ថ្ងៃម្ដង ហើយក្រោយពេលសម្រាលកូនរួចក៏ដូចគ្នាដែរ។'
+  },
+  {
+    id: "Q0024",
+    q: '<ruby>子牛<rt>こうし</rt></ruby>は<ruby>囲<rt>かこ</rt></ruby>いの<ruby>中<rt>なか</rt></ruby>に<ruby>入<rt>い</rt></ruby>れ、<ruby>日差<rt>ひざ</rt></ruby>しをさえぎって<ruby>育<rt>そだ</rt></ruby>てます。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "គេដាក់កូនគោក្នុងរនាំងបាំងជិត ហើយចិញ្ចឹមដោយបិទបាំងពន្លឺថ្ងៃទាំងស្រុង" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>換気<rt>かんき</rt></ruby>がよく<ruby>日当<rt>ひあ</rt></ruby>たりの<ruby>良<rt>よ</rt></ruby>い<ruby>環境<rt>かんきょう</rt></ruby>で<ruby>育<rt>そだ</rt></ruby>てる', 'ត្រូវចិញ្ចឹមក្នុងបរិយាកាសដែលមានខ្យល់ចេញចូលល្អ និងត្រូវពន្លឺថ្ងៃគ្រប់គ្រាន់'],
+      ['<ruby>暗<rt>くら</rt></ruby>い<ruby>所<rt>ところ</rt></ruby>で<ruby>育<rt>そだ</rt></ruby>てる', 'ចិញ្ចឹមក្នុងកន្លែងងងឹត']
+    ],
+    ans: 1,
+    exp: '<ruby>子牛<rt>こうし</rt></ruby>は<ruby>換気<rt>かんき</rt></ruby>がよく<ruby>日当<rt>ひあ</rt></ruby>たりの<ruby>良<rt>よ</rt></ruby>い<ruby>環境<rt>かんきょう</rt></ruby>で<ruby>育<rt>そだ</rt></ruby>てます。<ruby>日差<rt>ひざ</rt></ruby>しをさえぎる必要はありません。',
+    kmExp: 'កូនគោត្រូវចិញ្ចឹមក្នុងបរិយាកាសស្អាត មានខ្យល់ចេញចូលល្អ និងត្រូវពន្លឺថ្ងៃគ្រប់គ្រាន់ មិនត្រូវបិទបាំងពន្លឺថ្ងៃរហូតនោះទេ។'
+  },
+  {
+    id: "Q0025",
+    q: '<ruby>日本<rt>にほん</rt></ruby>で<ruby>飼養<rt>しよう</rt></ruby>されている<ruby>主<rt>おも</rt></ruby>な<ruby>豚<rt>ぶた</rt></ruby>の<ruby>品種<rt>ひんしゅ</rt></ruby>は、ランドレース、<ruby>大<rt>だい</rt></ruby>ヨークシャー、ハンプシャーです。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ពូជជ្រូកសំខាន់ៗដែលចិញ្ចឹមនៅប្រទេសជប៉ុនគឺ ឡង់ដ្រេស យ៉កស៊ែរធំ និងហាំបស្យែរ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['デュロックが<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវគឺពូជ ឌូរ៉ុក (Duroc)'],
+      ['<ruby>全部<rt>ぜんぶ</rt></ruby><ruby>違<rt>ちが</rt></ruby>う', 'ខុសទាំងអស់']
+    ],
+    ans: 1,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>で<ruby>飼養<rt>しよう</rt></ruby>されている<ruby>主<rt>おも</rt></ruby>な<ruby>品種<rt>ひんしゅ</rt></ruby>は、ランドレース、<ruby>大<rt>だい</rt></ruby>ヨークシャー、デュロックです。ハンプシャーではありません。',
+    kmExp: 'ពូជជ្រូកសំខាន់ៗដែលចិញ្ចឹមនៅប្រទេសជប៉ុនគឺ ឡង់ដ្រេស (L), យ៉កស៊ែរធំ (W) និង ឌូរ៉ុក (D) មិនមែនហាំបស្យែរទេ។'
+  },
+  {
+    id: "Q0026",
+    q: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>豚<rt>ぶた</rt></ruby>の<ruby>交配<rt>こうはい</rt></ruby>は<ruby>自然交配<rt>しぜんこうはい</rt></ruby>のみである。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ការបង្កាត់ពូជជ្រូកនៅប្រទេសជប៉ុនគឺមានតែការបង្កាត់ដោយធម្មជាតិប៉ុណ្ណោះ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>人工授精<rt>じんこうじゅせい</rt></ruby>もある', 'ក៏មានការបង្កាត់សិប្បនិម្មិត (AI) ដែរ'],
+      ['<ruby>両方<rt>りょうほう</rt></ruby>とも<ruby>行<rt>おこな</rt></ruby>われる', 'ទាំងពីរត្រូវបានអនុវត្ត']
+    ],
+    ans: 1,
+    exp: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>養豚<rt>ようとん</rt></ruby>では、<ruby>自然交配<rt>しぜんこうはい</rt></ruby>と<ruby>人工授精<rt>じんこうじゅせい</rt></ruby>（AI）が<ruby>行<rt>おこな</rt></ruby>われています。',
+    kmExp: 'នៅក្នុងការចិញ្ចឹមជ្រូកនៅប្រទេសជប៉ុន មានទាំងការបង្កាត់ដោយធម្មជាតិ និងការបង្កាត់សិប្បនិម្មិត (AI)។'
+  },
+  {
+    id: "Q0027",
+    q: '<ruby>子豚<rt>こぶた</rt></ruby>の<ruby>生時体重<rt>せいじたいじゅう</rt></ruby>は0.5kg<ruby>程度<rt>ていど</rt></ruby>が<ruby>正常<rt>せいじょう</rt></ruby>である。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ទម្ងន់កំណើតធម្មតារបស់កូនជ្រូកគឺប្រហែល 0.5kg" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>1.4kg<rt>いってんよんキログラム</rt></ruby>が<ruby>正常<rt>せいじょう</rt></ruby>', '1.4kg គឺធម្មតា'],
+      ['<ruby>2.0kg<rt>にてんぜろキログラム</rt></ruby>が<ruby>正常<rt>せいじょう</rt></ruby>', '2.0kg គឺធម្មតា']
+    ],
+    ans: 1,
+    exp: '<ruby>子豚<rt>こぶた</rt></ruby>の<ruby>生時体重<rt>せいじたいじゅう</rt></ruby>は<ruby>平均<rt>へいきん</rt></ruby>1.4kgです。',
+    kmExp: 'ទម្ងន់កំណើតជាមធ្យមរបស់កូនជ្រូកគឺ ១.៤ គីឡូក្រាម មិនមែន ០.៥ គីឡូក្រាមទេ។'
+  },
+  {
+    id: "Q0028",
+    q: '<ruby>種卵<rt>しゅらん</rt></ruby>は<ruby>人工孵化器<rt>じんこうふかき</rt></ruby>で10<ruby>日間<rt>にちかん</rt></ruby>で<ruby>孵化<rt>ふか</rt></ruby>する。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ពងមាន់ពូជញាស់ក្នុងទូភ្ញាស់សិប្បនិម្មិតរយៈពេល ១០ ថ្ងៃ" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>21<rt>にじゅういち</rt></ruby><ruby>日間<rt>にちかん</rt></ruby>である', 'គឺ ២១ ថ្ងៃ'],
+      ['<ruby>14<rt>じゅうよん</rt></ruby><ruby>日間<rt>にちかん</rt></ruby>である', 'គឺ ១៤ ថ្ងៃ']
+    ],
+    ans: 1,
+    exp: '<ruby>種卵<rt>しゅらん</rt></ruby>は<ruby>適切<rt>てきせつ</rt></ruby>な<ruby>温度<rt>おんど</rt></ruby>と<ruby>湿度<rt>しつど</rt></ruby>のもとで<ruby>21日目<rt>にじゅういちにちめ</rt></ruby>に<ruby>孵化<rt>ふか</rt></ruby>します。',
+    kmExp: 'ពងមាន់ពូជត្រូវញាស់នៅថ្ងៃទី ២១ ក្រោមសីតុណ្ហភាព និងសំណើមត្រឹមត្រូវ មិនមែន ១០ ថ្ងៃទេ។'
+  },
+  {
+    id: "Q0029",
+    q: '<ruby>商品<rt>しょうひん</rt></ruby>としての<ruby>鶏卵<rt>けいらん</rt></ruby>の<ruby>重<rt>おも</rt></ruby>さは30gが<ruby>平均的<rt>へいきんてき</rt></ruby>な<ruby>値<rt>あたい</rt></ruby>である。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "ទម្ងន់ជាមធ្យមនៃស៊ុតមាន់ពាណិជ្ជកម្មគឺ 30g" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>40<rt>よんじゅう</rt></ruby>～<ruby>46g<rt>よんじゅうろくグラム</rt></ruby>が<ruby>平均<rt>へいきん</rt></ruby>', 'មធ្យមគឺ 40-46g'],
+      ['<ruby>58<rt>ごじゅうはち</rt></ruby>～<ruby>64g<rt>ろくじゅうよんグラム</rt></ruby>が<ruby>平均<rt>へいきん</rt></ruby>', 'មធ្យមគឺ 58-64g']
+    ],
+    ans: 1,
+    exp: '<ruby>鶏卵<rt>けいらん</rt></ruby>の<ruby>取引規格<rt>とりひききかく</rt></ruby>では、M<ruby>サイズ<rt>さいず</rt></ruby>が58～64g、MS<ruby>サイズ<rt>さいず</rt></ruby>が52～58gです。30gは<ruby>非常<rt>ひじょう</rt></ruby>に<ruby>軽<rt>かる</rt></ruby>すぎます。',
+    kmExp: 'តាមស្ដង់ដារជួញដូរស៊ុតមាន់ ទំហំ M មានទម្ងន់ ៥៨-៦៤g ហើយ MS មាន ៥២-៥៨g ។ 30g គឺស្រាលជ្រុលពេកហើយ។'
+  },
+  {
+    id: "Q0030",
+    q: '<ruby>水槽<rt>すいそう</rt></ruby>やウォータカップは<ruby>常<rt>つね</rt></ruby>にきれいに<ruby>清掃<rt>せいそう</rt></ruby>しておくことが<ruby>必要<rt>ひつよう</rt></ruby>である。この<ruby>記述<rt>きじゅつ</rt></ruby>は<ruby>正<rt>ただ</rt></ruby>しいか。',
+    km: 'តើសេចក្តីថ្លែងការណ៍ដែលថា "អាងទឹក និងពែងទឹកផឹករបស់គោត្រូវតែលាងសម្អាតឱ្យស្អាតជានិច្ច" ត្រឹមត្រូវឬទេ?',
+    options: [
+      ['<ruby>正<rt>ただ</rt></ruby>しい', 'ត្រឹមត្រូវ'],
+      ['<ruby>正<rt>ただ</rt></ruby>しくない', 'មិនត្រឹមត្រូវ'],
+      ['<ruby>必要<rt>ひつよう</rt></ruby>ない', 'មិនចាំបាច់'],
+      ['<ruby>週<rt>しゅう</rt></ruby>に１<ruby>回<rt>かい</rt></ruby>で<ruby>十分<rt>じゅうぶん</rt></ruby>', 'ម្ដងក្នុងមួយសប្តាហ៍គឺគ្រប់គ្រាន់']
+    ],
+    ans: 0,
+    exp: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>が<ruby>新鮮<rt>しんせん</rt></ruby>な<ruby>水<rt>みず</rt></ruby>を<ruby>飲<rt>の</rt></ruby>めるように、<ruby>水槽<rt>すいそう</rt></ruby>やウォータカップは<ruby>常<rt>つね</rt></ruby>に<ruby>清掃<rt>せいそう</rt></ruby>しておく<ruby>必要<rt>ひつよう</rt></ruby>があります。',
+    kmExp: 'ដើម្បីឱ្យគោទឹកដោះអាចផឹកទឹកស្អាត និងស្រស់ជានិច្ច ចាំបាច់ត្រូវលាងសម្អាតអាងទឹក និងពែងទឹកផឹកឱ្យបានស្អាតជានិច្ច។'
+  },
+  {
+    id: "Q0031",
+    q: '<ruby>健康<rt>けんこう</rt></ruby>な<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>平常時<rt>へいじょうじ</rt></ruby>の<ruby>体温<rt>たいおん</rt></ruby>は<ruby>何度<rt>なんど</rt></ruby>ですか。',
+    km: 'តើសីតុណ្ហភាពរាងកាយធម្មតារបស់គោទឹកដោះដែលមានសុខភាពល្អគឺប៉ុន្មានអង្សា?',
+    options: [
+      ['<ruby>37.0<rt>さんじゅうななてんぜろ</rt></ruby>℃', '៣៧.០°C'],
+      ['<ruby>38.5<rt>さんじゅうはちてんご</rt></ruby>℃', '៣៨.៥°C'],
+      ['<ruby>40.0<rt>よんじゅうてんぜろ</rt></ruby>℃', '៤០.០°C'],
+      ['<ruby>42.0<rt>よんじゅうにてんぜろ</rt></ruby>℃', '៤២.០°C']
+    ],
+    ans: 1,
+    exp: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>は<ruby>第１胃<rt>だいいちい</rt></ruby>という<ruby>発酵<rt>はっこう</rt></ruby>タンクを<ruby>持<rt>も</rt></ruby>っているため<ruby>体温<rt>たいおん</rt></ruby>は<ruby>人間<rt>にんげん</rt></ruby>よりも<ruby>高<rt>たか</rt></ruby>く、<ruby>平常時<rt>へいじょうじ</rt></ruby>の<ruby>体温<rt>たいおん</rt></ruby>は38.5℃です。',
+    kmExp: 'គោទឹកដោះមានក្រពះទី១ (Rumen) សម្រាប់ផ្អាប់រំលាយចំណី ដូច្នេះសីតុណ្ហភាពរាងកាយរបស់វាខ្ពស់ជាងមនុស្ស គឺប្រហែល ៣៨.៥°C ។'
+  },
+  {
+    id: "Q0032",
+    q: '<ruby>肉用牛<rt>にくようぎゅう</rt></ruby>の<ruby>雄子牛<rt>おすこうし</rt></ruby>の<ruby>去勢<rt>きょせい</rt></ruby>は<ruby>遅<rt>おそ</rt></ruby>くとも<ruby>生後<rt>せいご</rt></ruby>どのくらいまでに<ruby>行<rt>おこな</rt></ruby>いますか。',
+    km: 'តើការគ្រៀវ (ធ្វើមាប់) កូនគោឈ្មោលសម្រាប់ចិញ្ចឹមយកសាច់ ត្រូវធ្វើមិនឱ្យយឺតជាងអាយុប៉ុន្មានខែ?',
+    options: [
+      ['<ruby>１<rt>いっ</rt></ruby>～<ruby>２<rt>に</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby>', 'អាយុ ១-២ ខែ'],
+      ['<ruby>４<rt>よん</rt></ruby>～<ruby>５<rt>ご</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby>', 'អាយុ ៤-៥ ខែ'],
+      ['<ruby>１０<rt>じゅう</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby>', 'អាយុ ១០ ខែ'],
+      ['<ruby>１２<rt>じゅうに</rt></ruby>か<ruby>月齢<rt>げつれい</rt></ruby>', 'អាយុ ១២ ខែ']
+    ],
+    ans: 1,
+    exp: '<ruby>肉用牛<rt>にくようぎゅう</rt></ruby>の<ruby>雄子牛<rt>おすこうし</rt></ruby>の<ruby>去勢<rt>きょせい</rt></ruby>は、<ruby>遅<rt>おそ</rt></ruby>くとも<ruby>生後<rt>せいご</rt></ruby>４～５か<ruby>月<rt>げつ</rt></ruby>までに<ruby>行<rt>おこな</rt></ruby>います。',
+    kmExp: 'ការគ្រៀវកូនគោឈ្មោលសម្រាប់ចិញ្ចឹមយកសាច់ ត្រូវធ្វើមិនឱ្យយឺតជាងអាយុ ៤-៥ ខែឡើយ។'
+  },
+  {
+    id: "Q0033",
+    q: '<ruby>混合飼料<rt>こんごうしりょう</rt></ruby>（TMR）とは<ruby>何<rt>なに</rt></ruby>ですか。',
+    km: 'តើអ្វីទៅជាចំណីចម្រុះពេញលេញ (TMR)?',
+    options: [
+      ['<ruby>粗飼料<rt>そしりょう</rt></ruby>だけを<ruby>混合<rt>こんごう</rt></ruby>したもの', 'លាយតែចំណីរដុបប៉ុណ្ណោះ'],
+      ['<ruby>濃厚飼料<rt>のうこうしりょう</rt></ruby>だけを<ruby>混合<rt>こんごう</rt></ruby>したもの', 'លាយតែចំណីប្រមូលផ្តុំប៉ុណ្ណោះ'],
+      ['<ruby>粗飼料<rt>そしりょう</rt></ruby>と<ruby>濃厚飼料<rt>のうこうしりょう</rt></ruby>を<ruby>混<rt>ま</rt></ruby>ぜ<ruby>合<rt>あ</rt></ruby>わせて<ruby>一<rt>いっ</rt></ruby>緒に<ruby>与<rt>あた</rt></ruby>える<ruby>方法<rt>ほうほう</rt></ruby>', 'វិធីសាស្ត្រលាយចំណីរដុប និងចំណីប្រមូលផ្តុំបញ្ចូលគ្នាជាមុន ហើយផ្ដល់ឱ្យស៊ីជាមួយគ្នា'],
+      ['<ruby>水<rt>みず</rt></ruby>と<ruby>飼料<rt>しりょう</rt></ruby>を<ruby>混<rt>ま</rt></ruby>ぜたもの', 'លាយទឹក និងចំណី']
+    ],
+    ans: 2,
+    exp: 'TMRは<ruby>粗飼料<rt>そしりょう</rt></ruby>と<ruby>濃厚飼料<rt>のうこうしりょう</rt></ruby>を<ruby>前<rt>まえ</rt></ruby>もって<ruby>両方<rt>りょうほう</rt></ruby>を<ruby>混合機<rt>こんごうき</rt></ruby>（ミキサー）で<ruby>混<rt>ま</rt></ruby>ぜ<ruby>合<rt>あ</rt></ruby>わせて<ruby>一<rt>いっ</rt></ruby>緒に<ruby>与<rt>あた</rt></ruby>える<ruby>方法<rt>ほうほう</rt></ruby>です。',
+    kmExp: 'TMR គឺជាវិធីសាស្ត្រលាយចំណីរដុប និងចំណីប្រមូលផ្តុំបញ្ចូលគ្នាជាមុនដោយម៉ាស៊ីនកិនលាយ (Mixer) ហើយផ្ដល់ឱ្យសត្វស៊ីជាមួយគ្នា។'
+  },
+  {
+    id: "Q0034",
+    q: '<ruby>競馬<rt>けいば</rt></ruby>に<ruby>使用<rt>しよう</rt></ruby>するサラブレッド<ruby>種<rt>しゅ</rt></ruby>は、どのように<ruby>生産<rt>せいさん</rt></ruby>されなければなりませんか。',
+    km: 'តើពូជសេះប្រណាំងថូរ៉ូប្រេដ (Thoroughbred) ត្រូវតែបង្កាត់ពូជដោយរបៀបណា?',
+    options: [
+      ['<ruby>人工授精<rt>じんこうじゅせい</rt></ruby>のみ', 'មានតែបង្កាត់សិប្បនិម្មិតប៉ុណ្ណោះ'],
+      ['<ruby>自然交配<rt>しぜんこうはい</rt></ruby>のみ', 'មានតែបង្កាត់ដោយធម្មជាតិប៉ុណ្ណោះ'],
+      ['<ruby>両方<rt>りょうほう</rt></ruby>とも<ruby>可<rt>か</rt></ruby>', 'ទាំងពីរអាចធ្វើបាន'],
+      ['<ruby>体外受精<rt>たいがいじゅせい</rt></ruby>', 'បង្កកំណើតក្នុងកែវពិសោធន៍ (IVF)']
+    ],
+    ans: 1,
+    exp: 'サラブレッド<ruby>種<rt>しゅ</rt></ruby>は<ruby>自然交配<rt>しぜんこうはい</rt></ruby>で<ruby>生産<rt>せいさん</rt></ruby>されたものに<ruby>限<rt>かぎ</rt></ruby>ります。<ruby>人工授精<rt>じんこうじゅせい</rt></ruby>によって<ruby>生産<rt>せいさん</rt></ruby>された<ruby>馬<rt>うま</rt></ruby>は<ruby>競馬<rt>けいば</rt></ruby>に<ruby>使用<rt>しよう</rt></ruby>できません。',
+    kmExp: 'សេះប្រណាំងពូជថូរ៉ូប្រេដ ត្រូវតែបង្កាត់ដោយធម្មជាតិប៉ុណ្ណោះ។ សេះដែលកើតពីការបង្កាត់សិប្បនិម្មិតមិនអាចចុះឈ្មោះប្រណាំងបានឡើយ។'
+  },
+  {
+    id: "Q0035",
+    q: '<ruby>豚<rt>ぶた</rt></ruby>の<ruby>妊娠期間<rt>にんしんきかん</rt></ruby>は<ruby>何日<rt>なんにち</rt></ruby>ですか。',
+    km: 'តើរយៈពេលពពោះរបស់ជ្រូកគឺប៉ុន្មានថ្ងៃ?',
+    options: [
+      ['<ruby>114<rt>ひゃくじゅうよん</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '១១៤ ថ្ងៃ'],
+      ['<ruby>150<rt>ひゃくごじゅう</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '១៥០ ថ្ងៃ'],
+      ['<ruby>280<rt>にひゃくはちじゅう</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '២៨០ ថ្ងៃ'],
+      ['<ruby>365<rt>さんびゃくろくじゅうご</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '៣៦៥ ថ្ងៃ']
+    ],
+    ans: 0,
+    exp: '<ruby>豚<rt>ぶた</rt></ruby>の<ruby>妊娠期間<rt>にんしんきかん</rt></ruby>は114<ruby>日<rt>にち</rt></ruby>です。',
+    kmExp: 'រយៈពេលពពោះរបស់ជ្រូកគឺ ១១៤ ថ្ងៃ (៣ ខែ ៣ សប្តាហ៍ ៣ ថ្ងៃ)។'
+  },
+  {
+    id: "Q0036",
+    q: '<ruby>肥育豚<rt>ひいくとん</rt></ruby>の<ruby>給餌方法<rt>きゅうじほうほう</rt></ruby>として<ruby>正<rt>ただ</rt></ruby>しいのはどれか。',
+    km: 'តើមួយណាជាវិធីផ្ដល់ចំណីត្រឹមត្រូវសម្រាប់ជ្រូកសាច់ (肥育豚)?',
+    options: [
+      ['<ruby>制限給餌<rt>せいげんきゅうじ</rt></ruby>（<ruby>決<rt>き</rt></ruby>まった<ruby>量<rt>りょう</rt></ruby>）', 'ផ្ដល់ចំណីតាមកម្រិតកំណត់ (កំណត់បរិមាណ)'],
+      ['<ruby>不断給餌<rt>ふだんきゅうじ</rt></ruby>（<ruby>自由採食<rt>じゆうさいしょく</rt></ruby>）', 'ផ្ដល់ចំណីពេញៗឥតកំណត់ (ស៊ីតាមចិត្តចង់)'],
+      ['<ruby>１<rt>いち</rt></ruby><ruby>日<rt>にち</rt></ruby>１<ruby>回<rt>かい</rt></ruby>だけ<ruby>与<rt>あた</rt></ruby>える', 'ផ្ដល់តែមួយដងក្នុងមួយថ្ងៃ'],
+      ['<ruby>水<rt>みず</rt></ruby>だけを<ruby>与<rt>あた</rt></ruby>える', 'ផ្ដល់តែទឹកប៉ុណ្ណោះ']
+    ],
+    ans: 1,
+    exp: '<ruby>肥育豚<rt>ひいくとん</rt></ruby>は<ruby>原則<rt>げんそく</rt></ruby>として<ruby>不断給餌<rt>ふだんきゅうじ</rt></ruby>（<ruby>自由採食<rt>じゆうさいしょく</rt></ruby>）です。<ruby>繁殖豚<rt>はんしょくとん</rt></ruby>は<ruby>制限給餌<rt>せいげんきゅうじ</rt></ruby>で<ruby>飼育<rt>しいく</rt></ruby>することが<ruby>多<rt>おお</rt></ruby>いです。',
+    kmExp: 'ជ្រូកសាច់ (肥育豚) ជាគោលការណ៍គឺផ្ដល់ចំណីឥតកំណត់ (不断給餌) ដើម្បីឱ្យឆាប់ធំ។ រីឯជ្រូកបន្តពូជ (繁殖豚) គេច្រើនផ្ដល់ចំណីតាមកម្រិតកំណត់ (制限給餌)។'
+  },
+  {
+    id: "Q0037",
+    q: '<ruby>ミツバチ<rt>みつばち</rt></ruby>が<ruby>新<rt>あたら</rt></ruby>しい<ruby>女王蜂<rt>じょおうばち</rt></ruby>とともに<ruby>群<rt>ぐん</rt></ruby>を<ruby>分<rt>わ</rt></ruby>けて<ruby>新<rt>あたら</rt></ruby>しい<ruby>巣<rt>す</rt></ruby>を<ruby>作<rt>つく</rt></ruby>る<ruby>行動<rt>こうどう</rt></ruby>を<ruby>何<rt>なん</rt></ruby>といいますか。',
+    km: 'តើសកម្មភាពដែលឃ្មុំបំបែកហ្វូងជាមួយមេឃ្មុំ ដើម្បីទៅបង្កើតសំបុកថ្មីហៅថាអ្វី?',
+    options: [
+      ['<ruby>分蜂<rt>ぶんぽう</rt></ruby>', 'ការបំបែកហ្វូងឃ្មុំ (分蜂)'],
+      ['<ruby>逃走<rt>とうそう</rt></ruby>', 'ការរត់ចោលសំបុក (逃走)'],
+      ['<ruby>越夏<rt>えっか</rt></ruby>', 'ការឆ្លងរដូវក្ដៅ (越夏)'],
+      ['<ruby>越冬<rt>えっとう</rt></ruby>', 'ការឆ្លងរដូវរងា (越冬)']
+    ],
+    ans: 0,
+    exp: '<ruby>春<rt>はる</rt></ruby>から<ruby>夏<rt>なつ</rt></ruby>にかけて、<ruby>古<rt>ふる</rt></ruby>い<ruby>女王蜂<rt>じょおうばち</rt></ruby>が<ruby>約<rt>やく</rt></ruby><ruby>半数<rt>はんすう</rt></ruby>の<ruby>働<rt>はたら</rt></ruby>きバチと<ruby>一緒<rt>いっしょ</rt></ruby>に<ruby>巣<rt>す</rt></ruby>を<ruby>出<rt>で</rt></ruby>て<ruby>新<rt>あたら</rt></ruby>しい<ruby>巣<rt>す</rt></ruby>を<ruby>作<rt>つく</rt></ruby>ることを<ruby>分蜂<rt>ぶんぽう</rt></ruby>といいます。',
+    kmExp: 'ចាប់ពីរដូវផ្ការីកដល់រដូវក្ដៅ មេឃ្មុំចាស់នឹងនាំឃ្មុំកម្មករប្រហែលពាក់កណ្តាលចេញពីសំបុកទៅបង្កើតសំបុកថ្មី ដែលហៅថា ការបំបែកហ្វូងឃ្មុំ (分蜂)។'
+  },
+  {
+    id: "Q0038",
+    q: '<ruby>鶏舎<rt>けいしゃ</rt></ruby>の<ruby>近<rt>ちか</rt></ruby>くで<ruby>死<rt>し</rt></ruby>んだ<ruby>野鳥<rt>やちょう</rt></ruby>を<ruby>見<rt>み</rt></ruby>つけた<ruby>場合<rt>ばあい</rt></ruby>、<ruby>最<rt>もっと</rt></ruby>も<ruby>適切<rt>てきせつ</rt></ruby>な<ruby>対応<rt>たいおう</rt></ruby>はどれか。',
+    km: 'ប្រសិនបើប្រទះឃើញបក្សីព្រៃងាប់នៅជិតរោងមាន់ តើសកម្មភាពត្រឹមត្រូវបំផុតគឺអ្វី?',
+    options: [
+      ['すぐにゴミ<ruby>箱<rt>ばこ</rt></ruby>に<ruby>捨<rt>す</rt></ruby>てる', 'បោះចោលក្នុងធុងសំរាមភ្លាម'],
+      ['<ruby>管理者<rt>かんりしゃ</rt></ruby>に<ruby>知<rt>し</rt></ruby>らせる', 'រាយការណ៍ជូនដំណឹងដល់អ្នកគ្រប់គ្រង'],
+      ['そのままにしておく', 'ទុកចោលនៅកន្លែងដដែល'],
+      ['<ruby>埋<rt>う</rt></ruby>めて<ruby>処分<rt>しょぶん</rt></ruby>する', 'កប់ចោលដោយខ្លួនឯង']
+    ],
+    ans: 1,
+    exp: '<ruby>鶏舎<rt>けいしゃ</rt></ruby>の<ruby>近<rt>ちか</rt></ruby>くで<ruby>野鳥<rt>やちょう</rt></ruby>などの<ruby>死体<rt>したい</rt></ruby>を<ruby>発見<rt>はっけん</rt></ruby>した<ruby>場合<rt>ばあい</rt></ruby>は、すぐに<ruby>管理者<rt>かんりしゃ</rt></ruby>へ<ruby>知<rt>し</rt></ruby>らせることが<ruby>重要<rt>じゅうよう</rt></ruby>です。<ruby>高病原性鳥<rt>こうびょうげんせいとり</rt></ruby>インフルエンザの<ruby>可能性<rt>かのうせい</rt></ruby>があります。',
+    kmExp: 'ប្រសិនបើប្រទះឃើញសាកសពបក្សីព្រៃងាប់នៅជិតរោងមាន់ ត្រូវរាយការណ៍ជូនអ្នកគ្រប់គ្រងភ្លាម ព្រោះវាអាចជាហានិភ័យនៃជំងឺផ្ដាសាយបក្សីកាចសាហាវ (HPAI)។'
+  },
+  {
+    id: "Q0039",
+    q: '<ruby>採卵鶏<rt>さいらんけい</rt></ruby>の<ruby>育すう<rt>いくすう</rt></ruby><ruby>期間<rt>きかん</rt></ruby>に<ruby>行<rt>おこな</rt></ruby>われる「<ruby>断嘴<rt>だんし</rt></ruby>（デビーク）」の<ruby>主<rt>おも</rt></ruby>な<ruby>目的<rt>もくてき</rt></ruby>はどれか。',
+    km: 'តើគោលបំណងសំខាន់នៃការកាត់ចំពុះ (断嘴/Debeaking) ក្នុងដំណាក់កាលចិញ្ចឹមកូនមាន់ពងគឺអ្វី?',
+    options: [
+      ['<ruby>餌<rt>えさ</rt></ruby>を<ruby>多<rt>おお</rt></ruby>く<ruby>食<rt>た</rt></ruby>べさせる', 'ដើម្បីឱ្យស៊ីចំណីបានកាន់តែច្រើន'],
+      ['<ruby>尻<rt>しり</rt></ruby>つつきや<ruby>共食<rt>ともぐ</rt></ruby>いなどの<ruby>悪癖<rt>あくへき</rt></ruby>を<ruby>防<rt>ふせ</rt></ruby>ぐ', 'ការពារទម្លាប់អាក្រក់ដូចជា ការចឹកគូទគ្នា និងការចឹកស៊ីសាច់គ្នា'],
+      ['<ruby>羽<rt>はね</rt></ruby>の<ruby>色<rt>いろ</rt></ruby>を<ruby>変<rt>か</rt></ruby>える', 'ដើម្បីប្តូរពណ៌រោមស្លាប'],
+      ['<ruby>卵<rt>たまご</rt></ruby>を<ruby>大<rt>おお</rt></ruby>きくする', 'ដើម្បីឱ្យពងធំជាងមុន']
+    ],
+    ans: 1,
+    exp: '<ruby>断嘴<rt>だんし</rt></ruby>（デビーク）の<ruby>目的<rt>もくてき</rt></ruby>は、<ruby>中すう<rt>ちゅうすう</rt></ruby><ruby>期<rt>き</rt></ruby>以降の「<ruby>尻<rt>しり</rt></ruby>つつき」や「<ruby>食羽<rt>しょくう</rt></ruby>」などの<ruby>悪癖<rt>あくへき</rt></ruby>を<ruby>未然<rt>みぜん</rt></ruby>に<ruby>防<rt>ふせ</rt></ruby>ぐことです。',
+    kmExp: 'គោលបំណងនៃការកាត់ចំពុះ (断嘴) គឺដើម្បីការពារទម្លាប់អាក្រក់ដូចជា "ការចឹកគូទគ្នា" និង "ការចឹកស៊ីរោមគ្នា" ដែលកើតឡើងចាប់ពីវ័យមាន់ជំទង់ (中すう期) ទៅ។'
+  },
+  {
+    id: "Q0040",
+    q: '<ruby>農場<rt>のうじょう</rt></ruby>の<ruby>踏<rt>ふ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>み<ruby>消毒槽<rt>しょうどくそう</rt></ruby>の<ruby>管理<rt>かんり</rt></ruby>について、<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាការគ្រប់គ្រងត្រឹមត្រូវសម្រាប់អាងជាន់ជើងសម្លាប់មេរោគ (踏み込み消毒槽) នៅក្នុងកសិដ្ឋាន?',
+    options: [
+      ['<ruby>消毒液<rt>しょうどくえき</rt></ruby>は<ruby>毎日<rt>まいにち</rt></ruby><ruby>交換<rt>こうかん</rt></ruby>する', 'ត្រូវផ្លាស់ប្តូរទឹកថ្នាំសម្លាប់មេរោគជារៀងរាល់ថ្ងៃ'],
+      ['<ruby>消毒液<rt>しょうどくえき</rt></ruby>は１<ruby>ヶ月<rt>かげつ</rt></ruby>に１<ruby>回<rt>かい</rt></ruby><ruby>交換<rt>こうかん</rt></ruby>する', 'ផ្លាស់ប្តូរទឹកថ្នាំសម្លាប់មេរោគ ១ ខែម្តង'],
+      ['<ruby>消毒液<rt>しょうどくえき</rt></ruby>が<ruby>減<rt>へ</rt></ruby>ったら<ruby>水<rt>みず</rt></ruby>を<ruby>足<rt>た</rt></ruby>せば<ruby>十分<rt>じゅうぶん</rt></ruby>', 'បើថយចុះ គ្រាន់តែបន្ថែមទឹកធម្មតាក៏គ្រប់គ្រាន់'],
+      ['<ruby>消毒液<rt>しょうどくえき</rt></ruby>は<ruby>交換<rt>こうかん</rt></ruby>しなくて<ruby>良<rt>よ</rt></ruby>い', 'មិនចាំបាច់ផ្លាស់ប្តូរទឹកថ្នាំទេ']
+    ],
+    ans: 0,
+    exp: '<ruby>踏<rt>ふ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>み<ruby>消毒槽<rt>しょうどくそう</rt></ruby>の<ruby>消毒液<rt>しょうどくえき</rt></ruby>の<ruby>効果<rt>こうか</rt></ruby>は<ruby>時間<rt>じかん</rt></ruby>の<ruby>経過<rt>けいか</rt></ruby>とともに<ruby>低下<rt>ていか</rt></ruby>するため、<ruby>薬液<rt>やくえき</rt></ruby>の<ruby>更新<rt>こうしん</rt></ruby>は<ruby>毎日<rt>まいにち</rt></ruby>、<ruby>汚<rt>よご</rt></ruby>れがひどい<ruby>場合<rt>ばあい</rt></ruby>にはその<ruby>都度<rt>つど</rt></ruby><ruby>行<rt>おこな</rt></ruby>います。',
+    kmExp: 'ប្រសិទ្ធភាពនៃទឹកថ្នាំក្នុងអាងជាន់ជើងសម្លាប់មេរោគ (踏み込み消毒槽) ថយចុះតាមពេលវេលា ដូច្នេះត្រូវផ្លាស់ប្តូរទឹកថ្នាំជារៀងរាល់ថ្ងៃ ហើយបើប្រឡាក់ខ្លាំងត្រូវប្តូរភ្លាមៗ។'
+  },
+  {
+    id: "Q0041",
+    q: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>体細胞数<rt>たいさいぼうすう</rt></ruby>が<ruby>増加<rt>ぞうか</rt></ruby>する<ruby>主<rt>おも</rt></ruby>な<ruby>原因<rt>げんいん</rt></ruby>はどれか。',
+    km: 'តើមូលហេតុចម្បងអ្វីដែលធ្វើឱ្យចំនួនកោសិការាងកាយ (SCC) ក្នុងទឹកដោះគោកើនឡើង?',
+    options: [
+      ['<ruby>乳房炎<rt>にゅうぼうえん</rt></ruby>', 'ជំងឺរលាកដោះ (乳房炎)'],
+      ['<ruby>飼料不足<rt>しりょうぶそく</rt></ruby>', 'កង្វះចំណី'],
+      ['<ruby>運動不足<rt>うんどうぶそく</rt></ruby>', 'កង្វះការធ្វើចលនា'],
+      ['<ruby>水質不良<rt>すいしつふりょう</rt></ruby>', 'គុណភាពទឹកផឹកមិនល្អ']
+    ],
+    ans: 0,
+    exp: '<ruby>乳房炎<rt>にゅうぼうえん</rt></ruby>になると、<ruby>乳房<rt>にゅうぼう</rt></ruby>が<ruby>病原性<rt>びょうげんせい</rt></ruby>の<ruby>細菌<rt>さいきん</rt></ruby>に<ruby>汚染<rt>おせん</rt></ruby>され、<ruby>白血球<rt>はっけっきゅう</rt></ruby>が<ruby>多<rt>おお</rt></ruby>くなり、<ruby>乳汁中<rt>にゅうじゅうちゅう</rt></ruby>に<ruby>排泄<rt>はいせつ</rt></ruby>されて<ruby>体細胞数<rt>たいさいぼうすう</rt></ruby>が<ruby>増<rt>ふ</rt></ruby>えます。',
+    kmExp: 'នៅពេលកើតជំងឺរលាកដោះ (乳房炎) កោសិកាឈាមសចូលទៅប្រឆាំងបាក់តេរី ហើយត្រូវបញ្ចេញមកក្នុងទឹកដោះ ដែលធ្វើឱ្យចំនួនកោសិការាងកាយ (体細胞数) កើនឡើងខ្ពស់។'
+  },
+  {
+    id: "Q0042",
+    q: 'ブロイラーの<ruby>飼育<rt>しいく</rt></ruby>において、<ruby>敷料<rt>しきりょう</rt></ruby>を10cm<ruby>以上<rt>いじょう</rt></ruby>の<ruby>厚<rt>あつ</rt></ruby>さに<ruby>敷<rt>し</rt></ruby>く<ruby>主<rt>おも</rt></ruby>な<ruby>理由<rt>りゆう</rt></ruby>はどれか。',
+    km: 'តើមូលហេតុចម្បងអ្វីដែលត្រូវក្រាលកម្រាល (敷料) កម្រាស់ 10cm ឡើងទៅសម្រាប់ចិញ្ចឹមមាន់សាច់ប្រូយឡែរ?',
+    options: [
+      ['<ruby>保温<rt>ほおん</rt></ruby>のため', 'ដើម្បីរក្សាកម្ដៅ'],
+      ['<ruby>足<rt>あし</rt></ruby>への<ruby>過重負担<rt>かじゅうふたん</rt></ruby>を<ruby>軽減<rt>けいげん</rt></ruby>するため', 'ដើម្បីកាត់បន្ថយបន្ទុកទម្ងន់លើជើង'],
+      ['<ruby>飼料費<rt>しりょうひ</rt></ruby>を<ruby>節約<rt>せつやく</rt></ruby>するため', 'ដើម្បីសន្សំថ្លៃចំណី'],
+      ['<ruby>卵<rt>たまご</rt></ruby>を<ruby>大<rt>おお</rt></ruby>きくするため', 'ដើម្បីឱ្យពងធំជាងមុន']
+    ],
+    ans: 1,
+    exp: 'ブロイラーの<ruby>体重<rt>たいじゅう</rt></ruby>が<ruby>急激<rt>きゅうげき</rt></ruby>に<ruby>増<rt>ふ</rt></ruby>えるため、<ruby>足<rt>あし</rt></ruby>への<ruby>過重負担<rt>かじゅうふたん</rt></ruby>を<ruby>軽減<rt>けいげん</rt></ruby>する<ruby>効果<rt>こうか</rt></ruby>があります。また、<ruby>座<rt>すわ</rt></ruby>っているときも<ruby>胸骨<rt>きょうこつ</rt></ruby>への<ruby>負担<rt>ふたん</rt></ruby>を<ruby>防<rt>ふせ</rt></ruby>ぎます。',
+    kmExp: 'ដោយសារទម្ងន់របស់មាន់ប្រូយឡែរកើនឡើងលឿនខ្លាំង ការក្រាលកម្រាលក្រាស់ជួយកាត់បន្ថយបន្ទុកលើជើង និងការពារការប៉ះទង្គិចដល់ឆ្អឹងទ្រូងពេលអង្គុយ។'
+  },
+  {
+    id: "Q0043",
+    q: '<ruby>豚<rt>ぶた</rt></ruby>の<ruby>発情周期<rt>はつじょうしゅうき</rt></ruby>は<ruby>何日<rt>なんにち</rt></ruby>ですか。',
+    km: 'តើវដ្តនៃការឡើងកម្ដៅ (ចង់ឈ្មោល) របស់ជ្រូកគឺប៉ុន្មានថ្ងៃ?',
+    options: [
+      ['<ruby>21<rt>にじゅういち</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '២១ ថ្ងៃ'],
+      ['<ruby>28<rt>にじゅうはち</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '២៨ ថ្ងៃ'],
+      ['<ruby>14<rt>じゅうよん</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '១៤ ថ្ងៃ'],
+      ['<ruby>35<rt>さんじゅうご</rt></ruby> <ruby>日<rt>にち</rt></ruby>', '៣៥ ថ្ងៃ']
+    ],
+    ans: 0,
+    exp: '<ruby>豚<rt>ぶた</rt></ruby>の<ruby>発情周期<rt>はつじょうしゅうき</rt></ruby>は21<ruby>日<rt>にち</rt></ruby>です。<ruby>雌豚<rt>めすぶた</rt></ruby>は<ruby>生後<rt>せいご</rt></ruby>６～７か<ruby>月<rt>げつ</rt></ruby>ぐらいから<ruby>発情<rt>はつじょう</rt></ruby>が<ruby>観察<rt>かんさつ</rt></ruby>できるようになります。',
+    kmExp: 'វដ្តនៃការឡើងកម្ដៅរបស់ជ្រូកគឺ ២១ ថ្ងៃ។ ជ្រូកញីចាប់ផ្ដើមឡើងកម្ដៅនៅអាយុប្រហែល ៦-៧ ខែ។'
+  },
+  {
+    id: "Q0044",
+    q: '<ruby>養蜂<rt>ようほう</rt></ruby>において、<ruby>巣板<rt>すばん</rt></ruby>が<ruby>巣箱<rt>すばこ</rt></ruby>に<ruby>固着<rt>こちゃく</rt></ruby>した<ruby>時<rt>とき</rt></ruby>に<ruby>引<rt>ひ</rt></ruby>き<ruby>剥<rt>は</rt></ruby>がすために<ruby>使<rt>つか</rt></ruby>う<ruby>器具<rt>きぐ</rt></ruby>はどれか。',
+    km: 'នៅក្នុងការចិញ្ចឹមឃ្មុំ តើឧបករណ៍អ្វីដែលប្រើសម្រាប់គាស់បន្ទះផ្លិតសំបុក (巣板) ដែលជាប់ស្អិតនឹងប្រអប់សំបុក?',
+    options: [
+      ['<ruby>ハイブツール<rt>はいぶつーる</rt></ruby>（<ruby>巣板用<rt>すばんよう</rt></ruby>ヘラ）', 'ប្រដាប់គាស់សំបុកឃ្មុំ (Hive tool)'],
+      ['<ruby>ハチブラシ<rt>はちぶらし</rt></ruby>', 'ច្រាសបោសឃ្មុំ (Bee brush)'],
+      ['<ruby>燻煙器<rt>くんえんき</rt></ruby>', 'ឧបករណ៍បាញ់ផ្សែង (Smoker)'],
+      ['<ruby>蜜刀<rt>みつとう</rt></ruby>', 'កាំបិតកាត់ក្រមួនទឹកឃ្មុំ']
+    ],
+    ans: 0,
+    exp: 'ハイブツールは<ruby>鉄製<rt>てつせい</rt></ruby>のヘラで、<ruby>巣板<rt>すばん</rt></ruby>が<ruby>巣箱<rt>すばこ</rt></ruby>に<ruby>固着<rt>こちゃく</rt></ruby>した<ruby>時<rt>とき</rt></ruby>に<ruby>引<rt>ひ</rt></ruby>き<ruby>剥<rt>は</rt></ruby>がす<ruby>場合<rt>ばあい</rt></ruby>などに<ruby>使<rt>つか</rt></ruby>います。',
+    kmExp: 'ឧបករណ៍ Hive tool (ハイブツール) គឺជាផ្លែកាំបិតដែកសំប៉ែត ប្រើសម្រាប់គាស់បន្ទះផ្លិតសំបុកដែលជាប់ស្អិតនឹងប្រអប់សំបុកឃ្មុំ។'
+  },
+  {
+    id: "Q0045",
+    q: '<ruby>衛生管理区域<rt>えいせいかんりくいき</rt></ruby>に<ruby>出入<rt>でい</rt></ruby>りする<ruby>車両<rt>しゃりょう</rt></ruby>の<ruby>消毒方法<rt>しょうどくほうほう</rt></ruby>として、<ruby>正<rt>ただ</rt></ruby>しいものはどれか。',
+    km: 'តើមួយណាជាវិធីសម្លាប់មេរោគត្រឹមត្រូវសម្រាប់យានយន្តដែលចេញចូលតំបន់គ្រប់គ្រងអនាម័យ (衛生管理区域)?',
+    options: [
+      ['<ruby>車両用消毒ゲート<rt>しゃりょうようしょうどくげーと</rt></ruby>で<ruby>通過<rt>つうか</rt></ruby>させる', 'ឱ្យឆ្លងកាត់ច្រកទ្វារបាញ់ថ្នាំសម្លាប់មេរោគលើយានយន្ត'],
+      ['<ruby>水<rt>みず</rt></ruby>で<ruby>洗<rt>あら</rt></ruby>うだけ', 'គ្រាន់តែលាងទឹកធម្មតា'],
+      ['<ruby>何<rt>なに</rt></ruby>もしなくて<ruby>良<rt>よ</rt></ruby>い', 'មិនបាច់ធ្វើអ្វីទាំងអស់'],
+      ['<ruby>アルコール<rt>あるこーる</rt></ruby>を<ruby>拭<rt>ふ</rt></ruby>きかける', 'យកអាល់កុលមកជូត']
+    ],
+    ans: 0,
+    exp: '<ruby>車両用消毒ゲート<rt>しゃりょうようしょうどくげーと</rt></ruby>、<ruby>消毒用噴霧器<rt>しょうどくようふんむき</rt></ruby>、<ruby>車両用消毒槽<rt>しゃりょうようしょうどくそう</rt></ruby>などが<ruby>使用<rt>しよう</rt></ruby>されます。<ruby>車両<rt>しゃりょう</rt></ruby>が<ruby>進入<rt>しんにゅう</rt></ruby>するとセンサーが<ruby>開<rt>ひら</rt></ruby>き、<ruby>上下左右<rt>じょうげさゆう</rt></ruby>から<ruby>薬液<rt>やくえき</rt></ruby>が<ruby>噴霧<rt>ふんむ</rt></ruby>されます。',
+    kmExp: 'ឧបករណ៍សម្លាប់មេរោគយានយន្តមានដូចជា ច្រកទ្វារបាញ់ថ្នាំ (車両用消毒ゲート), ឧបករណ៍បាញ់ថ្នាំ (消毒用噴霧器), និងរណ្ដៅសម្លាប់មេរោគកង់ឡាន។ ពេលឡានបើកចូល ឧបករណ៍ចាប់សញ្ញានឹងបញ្ជាឱ្យបាញ់ទឹកថ្នាំសម្លាប់មេរោគពីគ្រប់ទិសទី។'
+  },
+  {
+    id: "Q0046",
+    q: '<ruby>乳牛<rt>にゅうぎゅう</rt></ruby>の<ruby>分娩直後<rt>ぶんべんちょくご</rt></ruby>の<ruby>牛乳<rt>ぎゅうにゅう</rt></ruby>を<ruby>何<rt>なん</rt></ruby>と<ruby>呼<rt>よ</rt></ruby>びますか。',
+    km: 'តើទឹកដោះគោភ្លាមៗក្រោយពេលសម្រាលកូនរបស់គោទឹកដោះហៅថាអ្វី?',
+    options: [
+      ['<ruby>初乳<rt>しょにゅう</rt></ruby>', 'ទឹកដោះដំបូង (初乳/Colostrum)'],
+      ['<ruby>常乳<rt>じょうにゅう</rt></ruby>', 'ទឹកដោះធម្មតា (常乳)'],
+      ['<ruby>加工乳<rt>かこうにゅう</rt></ruby>', 'ទឹកដោះគោកែច្នៃ (加工乳)'],
+      ['<ruby>粉乳<rt>ふんにゅう</rt></ruby>', 'ម្សៅទឹកដោះគោ (粉乳)']
+    ],
+    ans: 0,
+    exp: '<ruby>分娩直後<rt>ぶんべんちょくご</rt></ruby>の<ruby>牛乳<rt>ぎゅうにゅう</rt></ruby>を<ruby>初乳<rt>しょにゅう</rt></ruby>と<ruby>呼<rt>よ</rt></ruby>びます。<ruby>初乳<rt>しょにゅう</rt></ruby>は<ruby>通常<rt>つうじょう</rt></ruby>の<ruby>牛乳<rt>ぎゅうにゅう</rt></ruby>（<ruby>常乳<rt>じょうにゅう</rt></ruby>）と<ruby>比<rt>くら</rt></ruby>べて<ruby>乳成分<rt>にゅうせいぶん</rt></ruby>の<ruby>含量<rt>がんりょう</rt></ruby>が<ruby>異<rt>こと</rt></ruby>なるため、<ruby>分娩後<rt>ぶんべんご</rt></ruby>５<ruby>日間<rt>にちかん</rt></ruby>の<ruby>牛乳<rt>ぎゅうにゅう</rt></ruby>は<ruby>出荷<rt>しゅっか</rt></ruby>できません。',
+    kmExp: 'ទឹកដោះគោភ្លាមៗក្រោយសម្រាលហៅថា ទឹកដោះដំបូង (初乳) ។ ទឹកដោះដំបូងមានសារធាតុខុសពីទឹកដោះធម្មតា (常乳) ដូច្នេះទឹកដោះក្នុងរយៈពេល ៥ ថ្ងៃដំបូងក្រោយសម្រាលមិនអនុញ្ញាតឱ្យដឹកចេញលក់ឡើយ។'
+  },
+  {
+    id: "Q0047",
+    q: '<ruby>肉用鶏<rt>にくようけい</rt></ruby>（ブロイラー）の<ruby>飼育<rt>しいく</rt></ruby>において、<ruby>出荷<rt>しゅっか</rt></ruby><ruby>前<rt>まえ</rt></ruby>７<ruby>日間<rt>にちかん</rt></ruby>に<ruby>給与<rt>きゅうよ</rt></ruby>しなければならない<ruby>飼料<rt>しりょう</rt></ruby>はどれか。',
+    km: 'តើចំណីប្រភេទណាដែលត្រូវផ្ដល់ឱ្យមាន់សាច់ (ប្រូយឡែរ) ស៊ីក្នុងរយៈពេល ៧ ថ្ងៃមុនពេលដឹកចេញលក់?',
+    options: [
+      ['<ruby>抗生物質<rt>こうせいぶっしつ</rt></ruby>を<ruby>含<rt>ふく</rt></ruby>む<ruby>飼料<rt>しりょう</rt></ruby>', 'ចំណីដែលមានលាយថ្នាំអង់ទីប៊ីយោទិក'],
+      ['<ruby>休薬飼料<rt>きゅうやくしりょう</rt></ruby>（<ruby>抗菌性物質<rt>こうきんせいぶっしつ</rt></ruby>が<ruby>入<rt>はい</rt></ruby>っていない<ruby>飼料<rt>しりょう</rt></ruby>）', 'ចំណីផ្អាកថ្នាំ (休薬飼料 - ចំណីដែលគ្មានសារធាតុប្រឆាំងបាក់តេរី)'],
+      ['<ruby>粗飼料<rt>そしりょう</rt></ruby>だけ', 'មានតែចំណីរដុបប៉ុណ្ណោះ'],
+      ['<ruby>水<rt>みず</rt></ruby>だけ', 'មានតែទឹកប៉ុណ្ណោះ']
+    ],
+    ans: 1,
+    exp: '<ruby>出荷<rt>しゅっか</rt></ruby><ruby>前<rt>まえ</rt></ruby>７<ruby>日間<rt>にちかん</rt></ruby>は<ruby>休薬飼料<rt>きゅうやくしりょう</rt></ruby>（<ruby>抗菌性物質<rt>こうきんせいぶっしつ</rt></ruby>が<ruby>入<rt>はい</rt></ruby>っていない<ruby>飼料<rt>しりょう</rt></ruby>）を<ruby>給与<rt>きゅうよ</rt></ruby>しなければなりません。',
+    kmExp: 'ក្នុងរយៈពេល ៧ ថ្ងៃមុនដឹកចេញលក់ ត្រូវផ្ដល់ចំណីផ្អាកថ្នាំ (休薬飼料) ដែលជាចំណីគ្មានលាយសារធាតុឱសថប្រឆាំងមេរោគឡើយ ដើម្បីកុំឱ្យមានសំណល់ថ្នាំក្នុងសាច់។'
+  },
+  {
+    id: "Q0048",
+    q: '<ruby>豚<rt>ぶた</rt></ruby>の<ruby>糞尿<rt>ふんにょう</rt></ruby>から<ruby>発生<rt>はっせい</rt></ruby>する<ruby>主<rt>おも</rt></ruby>な<ruby>悪臭成分<rt>あくしゅうせいぶん</rt></ruby>はどれか。',
+    km: 'តើសារធាតុក្លិនស្អុយចម្បងដែលភាយចេញពីលាមក និងទឹកនោមជ្រូកគឺអ្វី?',
+    options: [
+      ['<ruby>アンモニア<rt>あんもにあ</rt></ruby>や<ruby>揮発性脂肪酸<rt>きはつせいしぼうさん</rt></ruby>', 'ឧស្ម័នអាម៉ូញាក់ និងអាស៊ីតខ្លាញ់ងាយហួត (VFA)'],
+      ['<ruby>二酸化炭素<rt>にさんかたんそ</rt></ruby>', 'ឧស្ម័នកាបូនិច'],
+      ['<ruby>酸素<rt>さんそ</rt></ruby>', 'អុកស៊ីសែន'],
+      ['<ruby>窒素<rt>ちっそ</rt></ruby>', 'អាសូត']
+    ],
+    ans: 0,
+    exp: '<ruby>豚舎内<rt>とんしゃない</rt></ruby>の<ruby>臭気<rt>しゅうき</rt></ruby>は、<ruby>主<rt>おも</rt></ruby>に<ruby>糞<rt>ふん</rt></ruby>と<ruby>尿<rt>にょう</rt></ruby>から<ruby>発生<rt>はっせい</rt></ruby>したアンモニアや<ruby>硫黄化合物<rt>いおうかごうぶつ</rt></ruby>と、<ruby>酪酸<rt>らくさん</rt></ruby>、プロピオン<ruby>酸<rt>さん</rt></ruby>、<ruby>酢酸<rt>さくさん</rt></ruby>などの<ruby>揮発性脂肪酸<rt>きはつせいしぼうさん</rt></ruby>です。',
+    kmExp: 'ក្លិនស្អុយក្នុងក្រោលជ្រូកបណ្ដាលមកពីឧស្ម័នអាម៉ូញាក់ សមាសធាតុស្ពាន់ធ័រ និងអាស៊ីតខ្លាញ់ងាយហួតដូចជា អាស៊ីតប៊ុយទីរិក អាស៊ីតប្រូព្យូនិក និងអាស៊ីតអាសេទិក។'
+  },
+  {
+    id: "Q0049",
+    q: '<ruby>採卵鶏<rt>さいらんけい</rt></ruby>の<ruby>産卵<rt>さんらん</rt></ruby>に<ruby>適<rt>てき</rt></ruby>する<ruby>気温<rt>きおん</rt></ruby>はどれか。',
+    km: 'តើសីតុណ្ហភាពដែលសមស្របបំផុតសម្រាប់ការពងរបស់មាន់ពងគឺប៉ុន្មាន?',
+    options: [
+      ['<ruby>5<rt>ご</rt></ruby>～<ruby>10<rt>じゅう</rt></ruby>℃', '៥-១០°C'],
+      ['<ruby>12<rt>じゅうに</rt></ruby>～<ruby>25<rt>にじゅうご</rt></ruby>℃', '១២-២៥°C'],
+      ['<ruby>30<rt>さんじゅう</rt></ruby>～<ruby>35<rt>さんじゅうご</rt></ruby>℃', '៣០-៣៥°C'],
+      ['<ruby>40<rt>よんじゅう</rt></ruby>℃<ruby>以上<rt>いじょう</rt></ruby>', 'លើស ៤០°C']
+    ],
+    ans: 1,
+    exp: '<ruby>産卵<rt>さんらん</rt></ruby>に<ruby>適<rt>てき</rt></ruby>する<ruby>気温<rt>きおん</rt></ruby>は12～25℃とされています。<ruby>気温<rt>きおん</rt></ruby>が30℃を<ruby>超<rt>こ</rt></ruby>えると<ruby>産卵率<rt>さんらんりつ</rt></ruby>や<ruby>卵質<rt>らんしつ</rt></ruby>に<ruby>影響<rt>えいきょう</rt></ruby>します。',
+    kmExp: 'សីតុណ្ហភាពសមស្របសម្រាប់ការពងគឺ ១២-២៥°C។ ប្រសិនបើសីតុណ្ហភាពលើស ៣០°C នឹងធ្វើឱ្យអត្រាពង និងគុណភាពស៊ុតធ្លាក់ចុះ។'
+  },
+  {
+    id: "Q0050",
+    q: '<ruby>農場<rt>のうじょう</rt></ruby>の<ruby>飼料倉庫<rt>しりょうそうこ</rt></ruby>の<ruby>管理<rt>かんり</rt></ruby>で<ruby>最<rt>もっと</rt></ruby>も<ruby>重要<rt>じゅうよう</rt></ruby>なことはどれか。',
+    km: 'តើអ្វីជាការគ្រប់គ្រងសំខាន់បំផុតសម្រាប់ឃ្លាំងចំណីក្នុងកសិដ្ឋាន?',
+    options: [
+      ['<ruby>野鳥<rt>やちょう</rt></ruby>や<ruby>ネズミ<rt>ねずみ</rt></ruby>が<ruby>入<rt>はい</rt></ruby>らないようにする', 'ការពារកុំឱ្យសត្វបក្សីព្រៃ និងសត្វកណ្តុរចូល'],
+      ['<ruby>飼料<rt>しりょう</rt></ruby>を<ruby>多<rt>おお</rt></ruby>く<ruby>買<rt>か</rt></ruby>い<ruby>過<rt>す</rt></ruby>ぎないようにする', 'កុំទិញចំណីច្រើនជ្រុលពេក'],
+      ['<ruby>飼料<rt>しりょう</rt></ruby>の<ruby>色<rt>いろ</rt></ruby>を<ruby>変<rt>か</rt></ruby>えないようにする', 'កុំឱ្យចំណីប្តូរពណ៌'],
+      ['<ruby>飼料<rt>しりょう</rt></ruby>を<ruby>外<rt>そと</rt></ruby>に<ruby>出<rt>だ</rt></ruby>して<ruby>乾燥<rt>かんそう</rt></ruby>させる', 'យកចំណីទៅហាលថ្ងៃឱ្យស្ងួត']
+    ],
+    ans: 0,
+    exp: '<ruby>飼料倉庫<rt>しりょうそうこ</rt></ruby>には<ruby>野鳥<rt>やちょう</rt></ruby>や<ruby>ネズミ<rt>ねずみ</rt></ruby>が<ruby>入<rt>はい</rt></ruby>らないように<ruby>注意<rt>ちゅうい</rt></ruby>し、<ruby>常<rt>つね</rt></ruby>に<ruby>清掃<rt>せいそう</rt></ruby>して<ruby>清潔<rt>せいけつ</rt></ruby>にしておきます。また、<ruby>飼料<rt>しりょう</rt></ruby>にカビが<ruby>生<rt>は</rt></ruby>えていないかを<ruby>確認<rt>かくにん</rt></ruby>します。',
+    kmExp: 'ឃ្លាំងចំណីត្រូវការពារកុំឱ្យសត្វបក្សីព្រៃ និងកណ្តុរចូល ព្រមទាំងត្រូវបោសសម្អាតឱ្យមានអនាម័យជានិច្ច និងត្រួតពិនិត្យកុំឱ្យដុះផ្សិត។'
+  }
+];
+
+        // ============================================================
+        // 📌 STATE
+        // ============================================================
+
+        var currentQuestions = TEST_QUESTIONS;
+        var currentIndex = 0;
+        var score = 0;
+        var userAnswers = [];
+        var showKh = true;
+        var showFuri = true;
+        var useGoogleTTS = false;
+        var isLooping = false;
+        var isSpeaking = false;
+        var currentAudio = null;
+        var activeLoopType = '';
+        var activeLoopIndex = -1;
+
+        // ============================================================
+        // 📌 UTILITY
+        // ============================================================
+
+        function showToast(msg) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 3000);
+        }
+
+        function toggleKh() {
+            showKh = !showKh;
+            document.querySelectorAll('.km, .qkm').forEach(function(el) {
+                if (showKh) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+            var btn = document.getElementById('toggleKh');
+            btn.textContent = showKh ? 'ខ្មែរ' : 'ខ្មែរ';
+            btn.className = showKh ? 'active' : 'inactive';
+        }
+
+        function toggleFuri() {
+            showFuri = !showFuri;
+            document.querySelectorAll('rt').forEach(function(el) {
+                el.style.display = showFuri ? '' : 'none';
+            });
+            var btn = document.getElementById('toggleFuri');
+            btn.textContent = showFuri ? 'ふり' : 'ふり';
+            btn.className = showFuri ? 'active' : 'inactive';
+        }
+
+        function toggleGtts() {
+            useGoogleTTS = !useGoogleTTS;
+            var btn = document.getElementById('toggleGtts');
+            if (useGoogleTTS) {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-on';
+                showToast('🔊 Google TTS បើក');
+            } else {
+                btn.textContent = 'GTTS';
+                btn.className = 'gtts-off';
+                showToast('🔊 Speech Synthesis បើក');
+            }
+            try {
+                localStorage.setItem('useGoogleTTS', useGoogleTTS ? 'true' : 'false');
+            } catch(e) {}
+        }
+
+        function stripFurigana(html) {
+            if (!html) return '';
+            var div = document.createElement('div');
+            div.innerHTML = html;
+            var rubies = div.querySelectorAll('ruby');
+            rubies.forEach(function(ruby) {
+                var rt = ruby.querySelector('rt');
+                var furigana = rt ? rt.textContent || rt.innerText || '' : '';
+                var kanji = ruby.textContent || ruby.innerText || '';
+                if (rt) { kanji = kanji.replace(rt.textContent || rt.innerText || '', ''); }
+                kanji = kanji.trim();
+                var replacement = furigana || kanji;
+                ruby.replaceWith(replacement);
+            });
+            div.querySelectorAll('rt, rp').forEach(function(el) { el.remove(); });
+            return div.textContent || div.innerText || '';
+        }
+
+        // ============================================================
+        // 📌 SPEECH
+        // ============================================================
+
+        function speakWithWebSpeech(text, callback) {
+            if (!window.speechSynthesis) {
+                if (callback) callback();
+                return;
+            }
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ja-JP';
+            u.rate = 0.85;
+
+            var voices = window.speechSynthesis.getVoices();
+            var googleVoice = voices.find(function(v) {
+                return v.lang === 'ja-JP' && v.name.toLowerCase().includes('google');
+            });
+            if (googleVoice) {
+                u.voice = googleVoice;
+            }
+
+            u.onstart = function() { isSpeaking = true; };
+            u.onend = function() {
+                isSpeaking = false;
+                if (isLooping && callback) callback();
+            };
+            u.onerror = function() {
+                isSpeaking = false;
+                if (isLooping && callback) setTimeout(callback, 1000);
+            };
+            window.speechSynthesis.speak(u);
+        }
+
+        function speakText(text, callback) {
+            if (!text || text.trim() === '') {
+                if (callback) callback();
+                return;
+            }
+
+            if (useGoogleTTS) {
+                if (typeof Android !== 'undefined' && typeof Android.speak === 'function') {
+                    Android.speak(text);
+                    isSpeaking = true;
+                    if (isLooping) {
+                        var est = Math.min(text.length * 100 + 2000, 30000);
+                        setTimeout(function() {
+                            isSpeaking = false;
+                            if (isLooping && callback) callback();
+                        }, est);
+                    }
+                    return;
+                }
+
+                try {
+                    var url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' +
+                        encodeURIComponent(text) + '&tl=ja&client=tw-ob';
+
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+
+                    var audio = new Audio(url);
+                    currentAudio = audio;
+                    audio.play();
+                    isSpeaking = true;
+
+                    audio.onended = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        if (isLooping && callback) callback();
+                    };
+
+                    audio.onerror = function() {
+                        isSpeaking = false;
+                        currentAudio = null;
+                        speakWithWebSpeech(text, callback);
+                    };
+
+                    return;
+                } catch (e) {
+                    speakWithWebSpeech(text, callback);
+                }
+                return;
+            }
+
+            speakWithWebSpeech(text, callback);
+        }
+
+        // ===== ប៊ូតុង "អាន" =====
+        function speakCurrentQuestion() {
+            if (!currentQuestions || currentQuestions.length === 0) return;
+            var q = currentQuestions[currentIndex];
+            var text = stripFurigana(q.q) + '。 ';
+            q.options.forEach(function(o, i) {
+                text += String.fromCharCode(65 + i) + '。 ' + stripFurigana(o[0]) + '。 ';
+            });
+            if (userAnswers[currentIndex] !== null) {
+                text += '正解は ' + stripFurigana(q.options[q.ans][0]) + ' です。 ';
+                text += stripFurigana(q.exp) + '。 ';
+            }
+            if (isLooping) {
+                speakText(text, function() {
+                    if (isLooping) speakCurrentQuestion();
+                });
+            } else {
+                speakText(text, null);
+            }
+        }
+
+        // ===== ប៊ូតុង "ឈប់" =====
+        function stopSpeech() {
+            isLooping = false;
+            activeLoopType = '';
+            activeLoopIndex = -1;
+
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            if (typeof Android !== 'undefined' && typeof Android.stop === 'function') {
+                Android.stop();
+            }
+
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+
+            isSpeaking = false;
+            var loopBtn = document.getElementById('loopBtn');
+            if (loopBtn) { loopBtn.textContent = '🔁'; loopBtn.classList.remove('loop-on'); }
+            showToast('⏸ បញ្ឈប់សំឡេង');
+        }
+
+        // ===== ប៊ូតុង "LOOP" =====
+        function toggleLoop() {
+            var loopBtn = document.getElementById('loopBtn');
+            if (!loopBtn) return;
+            if (isLooping) {
+                isLooping = false;
+                activeLoopType = '';
+                activeLoopIndex = -1;
+                loopBtn.textContent = '🔁';
+                loopBtn.classList.remove('loop-on');
+                showToast('⏸ បិទ Loop');
+            } else {
+                isLooping = true;
+                loopBtn.textContent = '🔁 LOOP';
+                loopBtn.classList.add('loop-on');
+                showToast('🔁 បើក Loop');
+            }
+        }
+
+        // ============================================================
+        // 📌 QUIZ ENGINE
+        // ============================================================
+
+        function renderQuestion() {
+            if (!currentQuestions || currentQuestions.length === 0) {
+                document.getElementById('contentArea').innerHTML = '<div style="text-align:center;padding:40px 0;color:#a0aec0">⏳ គ្មានសំណួរ</div>';
+                return;
+            }
+            var q = currentQuestions[currentIndex];
+            var total = currentQuestions.length;
+
+            document.getElementById('progressFill').style.width = ((currentIndex + 1) / total * 100) + '%';
+            document.getElementById('qscore').textContent = '✅ ' + score;
+            document.getElementById('qnum').textContent = '📌 សំណួរ ' + (currentIndex + 1) + '/' + total;
+
+            document.getElementById('prevBtn').disabled = (currentIndex === 0);
+            document.getElementById('nextBtn').disabled = false;
+
+            var html = '<div class="question-top">';
+            html += '<div class="qnum">📌 សំណួរ ' + (currentIndex + 1) + '/' + total + '</div>';
+            html += '<div class="tts-group">';
+            html += '<button class="tts-btn" onclick="speakCurrentQuestion()">🔊 អាន</button>';
+            html += '<button class="tts-btn" id="loopBtn" onclick="toggleLoop()">🔁</button>';
+            html += '<button class="tts-btn stop-btn" onclick="stopSpeech()">⏸ ឈប់</button>';
+            html += '</div></div>';
+
+            html += '<div class="qtext">' + q.q + '</div>';
+            html += '<div class="qkm' + (showKh ? '' : ' hidden') + '">🇰🇭 ' + q.km + '</div>';
+
+            q.options.forEach(function(o, i) {
+                var l = String.fromCharCode(65 + i);
+                var cls = '';
+                if (userAnswers[currentIndex] !== null) {
+                    if (i === q.ans) cls = 'correct';
+                    else if (i === userAnswers[currentIndex] && i !== q.ans) cls = 'wrong';
+                }
+                html += '<button class="choice ' + cls + '" onclick="selectAnswer(' + i + ')" ' +
+                    (userAnswers[currentIndex] !== null ? 'disabled style="pointer-events:none;"' : '') + '>';
+                html += '<span><b>' + l + '.</b> ' + o[0] + '</span>';
+                html += '<span class="km' + (showKh ? '' : ' hidden') + '">🇰🇭 ' + o[1] + '</span>';
+                html += '</button>';
+            });
+
+            document.getElementById('contentArea').innerHTML = html;
+
+            if (userAnswers[currentIndex] !== null) {
+                var idx = userAnswers[currentIndex];
+                var fb = '<div class="feedback">';
+                if (idx === q.ans) fb += '<strong>✅ ត្រឹមត្រូវ!</strong>';
+                else fb += '<strong>❌ ខុស!</strong> ចម្លើយត្រឹមត្រូវគឺ <strong>' + String.fromCharCode(65 + q.ans) + '</strong>';
+                fb += '<div class="exp">💡 ' + q.exp;
+                fb += '<span class="km' + (showKh ? '' : ' hidden') + '">🇰🇭 ' + q.kmExp + '</span>';
+                fb += '</div></div>';
+                document.getElementById('feedbackArea').innerHTML = fb;
+            } else {
+                document.getElementById('feedbackArea').innerHTML = '';
+            }
+
+            document.querySelectorAll('rt').forEach(function(el) {
+                el.style.display = showFuri ? '' : 'none';
+            });
+        }
+
+        function selectAnswer(i) {
+            if (userAnswers[currentIndex] !== null) return;
+            var q = currentQuestions[currentIndex];
+            userAnswers[currentIndex] = i;
+            if (i === q.ans) score++;
+            renderQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentIndex < currentQuestions.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        function showResult() {
+            stopSpeech();
+            var total = currentQuestions.length || 1;
+            var pass = score >= (total * 0.6);
+            var pct = Math.round(score / total * 100);
+
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('qnum').textContent = '📊 លទ្ធផល';
+            document.getElementById('qscore').textContent = '✅ ' + score;
+            document.getElementById('prevBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('feedbackArea').innerHTML = '';
+
+            document.getElementById('contentArea').innerHTML =
+                '<div class="result">' +
+                '<h2>🏆 លទ្ធផលប្រឡង</h2>' +
+                '<div class="score">' + score + '/' + total + '</div>' +
+                '<div class="label">ពិន្ទុ ( ' + pct + '% )</div>' +
+                '<div class="' + (pass ? 'pass' : 'fail') + '">' +
+                (pass ? '🎉 ប្រឡងជាប់!' : '💪 ព្យាយាមម្តងទៀត!') + '</div>' +
+                '<button class="btn-reset" onclick="resetQuiz()">📝 ប្រឡងម្តងទៀត</button>' +
+                '</div>';
+        }
+
+        function resetQuiz() {
+            stopSpeech();
+            currentIndex = 0;
+            score = 0;
+            userAnswers = new Array(currentQuestions.length).fill(null);
+            document.getElementById('feedbackArea').innerHTML = '';
+            renderQuestion();
+        }
+
+        // ============================================================
+        // 🚀 START
+        // ============================================================
+
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+        }
+
+        try {
+            var saved = localStorage.getItem('useGoogleTTS');
+            if (saved !== null) useGoogleTTS = saved === 'true';
+            var gttsBtn = document.getElementById('toggleGtts');
+            if (gttsBtn) gttsBtn.className = useGoogleTTS ? 'gtts-on' : 'gtts-off';
+        } catch(e) {}
+
+        userAnswers = new Array(currentQuestions.length).fill(null);
+        renderQuestion();
+    </script>
+</body>
+</html>
